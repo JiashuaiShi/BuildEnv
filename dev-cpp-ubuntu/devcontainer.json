@@ -1,0 +1,8 @@
+{
+    // "build": {
+    //     "dockerfile": "cpp-ubuntu.Dockerfile"
+    // }
+    "dockerComposeFile": "docker-compose.yml",
+    "service": "cpp-container",
+    "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}"
+}

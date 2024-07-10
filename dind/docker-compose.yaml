@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  bioinformatics:
+    container_name: DindBioInfo
+    build: .
+    image: jiashuai/dind-biodev:0.1
+    environment:
+      http_proxy: http://172.19.11.241:443
+      https_proxy: http://172.19.11.241:443
+      no_proxy: localhost,127.*,10.*,172.16.*
+      DOCKER_TLS_CERTDIR: /certs  # 配置Docker TLS证书目录
+
+    privileged: true  # 允许特权模式，以便运行dind
+    volumes:
+      - /data/lush-dev/shijiashuai/workspace:/workspace
+      - /data:/data
+      - /data1:/data1
+      - /var/run/docker.sock:/var/run/docker.sock  # 挂载Docker套接字
+    networks:
+      - bioinformatics_network
+
+networks:
+  bioinformatics_network:
+    driver: bridge  # 使用桥接网络

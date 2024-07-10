@@ -1,0 +1,8 @@
+{
+    // "build": {
+    //     "dockerfile": "cpp-ubuntu.Dockerfile"
+    // }
+    "dockerComposeFile": "docker-compose.yml",
+    "service": "lush_alignerr",
+    "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}"
+}
