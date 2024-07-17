@@ -12,10 +12,11 @@ LABEL base.image="ubuntu:24.04" \
       maintainer="Curtis Kapsak" \
       maintainer.email="kapsakcj@gmail.com"
 
+# Set the Kraken2 version
+ENV K2VER="2.1.3"
 # Set environment variables
 ENV PATH="/kraken2-${K2VER}:$PATH" \
     LC_ALL=C
-
 # Install dependencies and Kraken2
 RUN apt-get update && apt-get -y --no-install-recommends install \
         wget \
@@ -27,7 +28,6 @@ RUN apt-get update && apt-get -y --no-install-recommends install \
         cpanminus && \
     rm -rf /var/lib/apt/lists/* && apt-get autoclean && \
     cpanm Getopt::Std && \
-    K2VER="2.1.3" && \
     wget https://github.com/DerrickWood/kraken2/archive/v${K2VER}.tar.gz && \
     tar -xzf v${K2VER}.tar.gz && \
     rm -rf v${K2VER}.tar.gz && \
