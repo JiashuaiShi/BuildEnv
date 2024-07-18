@@ -34,4 +34,4 @@ RUN curl -L "https://github.com/docker/compose/releases/download/2.28.1/docker-c
 ENTRYPOINT ["dockerd-entrypoint.sh"]
 
 # Start Docker daemon and keep the container running
-CMD ["sh", "-c", "while :; do sleep 6h & wait $${!}; done"]
+CMD ["sh", "-c", "while :; do if ! pgrep sleep > /dev/null; then sleep 6h & fi; wait $${!}; done"]
