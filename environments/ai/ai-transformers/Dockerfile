@@ -4,6 +4,10 @@ FROM huggingface/transformers-pytorch-gpu:latest
 # 设置镜像的元信息
 LABEL maintainer="shijiashuai" description="huggingface/transformers test"
 
+# Use ARG for build-time proxy and ENV noninteractive
+
+ENV DEBIAN_FRONTEND=noninteractive
+
 # 切换到 root 用户
 USER root
 
@@ -38,6 +42,9 @@ RUN rm -rf /home/shijiashuai/.oh-my-zsh && \
      git clone https://github.com/ohmyzsh/ohmyzsh.git /home/shijiashuai/.oh-my-zsh) && \
     cp /home/shijiashuai/.oh-my-zsh/templates/zshrc.zsh-template /home/shijiashuai/.zshrc && \
     chown -R shijiashuai:lush-dev /home/shijiashuai/.oh-my-zsh /home/shijiashuai/.zshrc
+
+# 清理代理环境变量
+USER root
 
 # 开放SSH端口
 EXPOSE 22

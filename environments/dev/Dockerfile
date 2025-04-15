@@ -5,12 +5,8 @@ FROM ubuntu:24.04
 LABEL maintainer="shijiashuai" description="统一开发环境 - C++/Java多版本"
 
 # 接收构建参数
-ARG http_proxy
-ARG https_proxy
 
 # 在构建时设置代理环境变量
-ENV http_proxy=$http_proxy
-ENV https_proxy=$https_proxy
 
 # 避免交互式提示
 ENV DEBIAN_FRONTEND=noninteractive
@@ -201,8 +197,6 @@ RUN chmod 644 /etc/supervisor/conf.d/supervisord.conf
 # SSH服务安装和配置 (已由脚本完成)
 # 设置语言环境 (已由脚本完成)
 # 清理代理设置，确保最终镜像不包含代理
-ENV http_proxy=""
-ENV https_proxy=""
 
 #################################################
 # 工具配置部分

@@ -5,10 +5,7 @@ FROM mcr.microsoft.com/devcontainers/cpp:ubuntu-22.04
 LABEL maintainer="shijiashuai" description="VS Code C++ Dev Container (Ubuntu 22.04 based)"
 
 # Use ARG for build-time proxy
-ARG http_proxy
-ARG https_proxy
-ENV http_proxy=$http_proxy
-ENV https_proxy=$https_proxy
+
 ENV DEBIAN_FRONTEND=noninteractive
 
 # --- Run Common User Setup Script ---
@@ -51,6 +48,8 @@ RUN wget https://github.com/samtools/samtools/releases/download/1.18/samtools-1.
 
 # --- Configure Supervisor ---
 # Create a simple supervisord config to start sshd
+# Note: supervisord.conf is not copied, it's created here.
+# If a custom one exists in the directory, use COPY instead.
 RUN echo '[supervisord]\nnodaemon=true\nuser=root\n' > /etc/supervisor/conf.d/supervisord.conf && \
     echo '[program:sshd]\ncommand=/usr/sbin/sshd -D\nautostart=true\nautorestart=true\nuser=root\n' >> /etc/supervisor/conf.d/supervisord.conf && \
     chmod 644 /etc/supervisor/conf.d/supervisord.conf
@@ -68,8 +67,6 @@ RUN rm -rf /home/shijiashuai/.oh-my-zsh && \
 
 # 清理代理环境变量
 USER root
-ENV http_proxy=""
-ENV https_proxy=""
 
 # 暴露SSH端口
 EXPOSE 22

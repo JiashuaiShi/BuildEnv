@@ -8,11 +8,7 @@ FROM bioconductor/bioconductor_docker:latest
 #     no_proxy=localhost,127.*,10.*,172.16.*,172.17.*,172.18.*,172.19.*,172.20.*,172.21.*,172.22.*,172.23.*,172.24.*,172.25.*,172.26.*,172.27.*,172.28.*,172.29.*,172.30.*,172.31.*,192.168.* \
 #     CONDA_SSL_VERIFY=false
 # Use ARG for build-time proxy and ENV noninteractive
-ARG http_proxy
-ARG https_proxy
 ENV DEBIAN_FRONTEND=noninteractive
-ENV http_proxy=$http_proxy
-ENV https_proxy=$https_proxy
 # Consider setting CONDA_SSL_VERIFY=false via ARG or if truly needed globally
 # ENV CONDA_SSL_VERIFY=false
 
@@ -51,8 +47,6 @@ RUN rm -rf /home/shijiashuai/.oh-my-zsh && \
 
 # 清理代理环境变量
 USER root
-ENV http_proxy=""
-ENV https_proxy=""
 
 # 开放SSH端口
 EXPOSE 22

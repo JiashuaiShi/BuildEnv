@@ -4,6 +4,9 @@ FROM docker.io/jupyter/tensorflow-notebook:latest
 # 设置镜像的元信息
 LABEL maintainer="shijiashuai" description="jupyter/tensorflow-notebook test"
 
+# Use ARG for build-time proxy and ENV noninteractive
+ENV DEBIAN_FRONTEND=noninteractive
+
 # 切换到 root 用户
 USER root
 
@@ -28,6 +31,9 @@ RUN echo '[supervisord]\nnodaemon=true\nuser=root\n' > /etc/supervisor/conf.d/su
     echo '[program:sshd]\ncommand=/usr/sbin/sshd -D\nautostart=true\nautorestart=true\nuser=root\n' >> /etc/supervisor/conf.d/supervisord.conf && \
     # Optional: Add jupyter notebook startup here if needed via supervisor
     chmod 644 /etc/supervisor/conf.d/supervisord.conf
+
+# 清理代理环境变量
+USER root
 
 # 切换到普通用户
 USER shijiashuai
