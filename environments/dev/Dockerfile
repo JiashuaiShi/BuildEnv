@@ -298,11 +298,33 @@ WORKDIR /home/shijiashuai
 # 用户环境配置
 #################################################
 
+# 安装 Miniconda
+RUN wget -q -O /tmp/miniconda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh && \
+    chmod +x /tmp/miniconda.sh && \
+    export CONDA_DISABLE_PROGRESS_BARS=1 && \
+    export PYTHONIOENCODING=utf8 && \
+    export PYTHONUNBUFFERED=1 && \
+    bash /tmp/miniconda.sh -b -p $HOME/miniconda && \
+    rm -f /tmp/miniconda.sh && \
+    $HOME/miniconda/bin/conda config --set always_yes yes && \
+    $HOME/miniconda/bin/conda config --set auto_activate_base false && \
+    $HOME/miniconda/bin/conda config --set ssl_verify false && \
+    $HOME/miniconda/bin/conda config --set remote_read_timeout_secs 600 && \
+    $HOME/miniconda/bin/conda config --set remote_connect_timeout_secs 60 && \
+    $HOME/miniconda/bin/conda config --set concurrent_download_threads 1 && \
+    $HOME/miniconda/bin/conda config --set remote_max_retries 10 && \
+    echo 'export PATH="$HOME/miniconda/bin:$PATH"' >> $HOME/.bashrc && \
+    echo 'export PATH="$HOME/miniconda/bin:$PATH"' >> $HOME/.zshrc && \
+    # Ensure the user owns the config files after modification
+    chown shijiashuai:lush-dev $HOME/.bashrc $HOME/.zshrc
+
 # 安装oh-my-zsh和插件
 RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended || true && \
     git clone --depth=1 https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-autosuggestions || true && \
     git clone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting || true && \
-    sed -i 's/plugins=(git)/plugins=(git maven gradle zsh-autosuggestions zsh-syntax-highlighting)/' $HOME/.zshrc || true
+    sed -i 's/plugins=(git)/plugins=(git maven gradle conda zsh-autosuggestions zsh-syntax-highlighting)/' $HOME/.zshrc || true && \
+    # Ensure the user owns the config file after modification
+    chown shijiashuai:lush-dev $HOME/.zshrc
 
 # 添加JDK切换别名
 RUN echo 'alias jdk8="source /usr/local/bin/jdk 8"' >> $HOME/.zshrc && \
