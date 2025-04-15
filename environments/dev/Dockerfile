@@ -48,16 +48,22 @@ RUN apt-get update -o Acquire::Check-Valid-Until=false -o Acquire::Check-Date=fa
     && rm -rf /var/lib/apt/lists/* && \
     apt-get clean || true
 
+# --- Run Common User Setup Script ---
+COPY scripts/common-user-setup.sh /tmp/
+RUN chmod +x /tmp/common-user-setup.sh && \
+    /tmp/common-user-setup.sh && \
+    rm /tmp/common-user-setup.sh
+
 #################################################
 # C++开发环境安装部分
 #################################################
 
 # 分步安装基础工具
+# Note: sudo, git already installed by common script
 RUN apt-get update -o Acquire::Check-Valid-Until=false -o Acquire::Check-Date=false || true && \
     apt-get install -y --no-install-recommends --allow-unauthenticated \
     build-essential \
     cmake \
-    sudo \
     gdb \
     git \
     ninja-build \
@@ -65,12 +71,12 @@ RUN apt-get update -o Acquire::Check-Valid-Until=false -o Acquire::Check-Date=fa
     apt-get clean || true
 
 # 分步安装编译相关工具
+# Note: locales-all already installed by common script
 RUN apt-get update -o Acquire::Check-Valid-Until=false -o Acquire::Check-Date=false || true && \
     apt-get install -y --no-install-recommends --allow-unauthenticated \
     autoconf \
     automake \
     libtool \
-    locales-all \
     dos2unix \
     rsync \
     tar \
@@ -177,58 +183,23 @@ RUN apt-get update -o Acquire::Check-Valid-Until=false -o Acquire::Check-Date=fa
 #################################################
 
 # 安装通用开发工具（除了SSH相关）
+# Note: zsh, supervisor already installed by common script
 RUN apt-get update -o Acquire::Check-Valid-Until=false -o Acquire::Check-Date=false || true && \
     apt-get install -y --no-install-recommends --allow-unauthenticated \
     vim \
     neovim \
     htop \
     less \
-    zsh \
-    supervisor \
     tmux \
     && rm -rf /var/lib/apt/lists/* && \
-    apt-get clean || true && \
-    mkdir -p /etc/supervisor/conf.d
+    apt-get clean || true
 
-# 配置 supervisor
-RUN mkdir -p /etc/supervisor/conf.d && \
-    mkdir -p /var/log/supervisor && \
-    touch /var/log/supervisor/supervisord.log && \
-    touch /var/log/supervisor/sshd.log && \
-    touch /var/log/supervisor/sshd.err && \
-    chown -R root:root /var/log/supervisor && \
-    chmod -R 755 /var/log/supervisor
-
+# 配置 supervisor (基础目录已由脚本创建)
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 RUN chmod 644 /etc/supervisor/conf.d/supervisord.conf
 
-# SSH服务安装和配置
-RUN apt-get update -o Acquire::Check-Valid-Until=false -o Acquire::Check-Date=false || true && \
-    apt-get install -y --no-install-recommends --allow-unauthenticated \
-    openssh-server \
-    && rm -rf /var/lib/apt/lists/* && \
-    apt-get clean || true && \
-    mkdir -p /var/run/sshd && \
-    mkdir -p /etc/ssh && \
-    echo "# Package generated configuration file" > /etc/ssh/sshd_config && \
-    echo "# See the sshd_config(5) manpage for details" >> /etc/ssh/sshd_config && \
-    echo "PermitRootLogin yes" >> /etc/ssh/sshd_config && \
-    echo "PasswordAuthentication yes" >> /etc/ssh/sshd_config && \
-    echo "ChallengeResponseAuthentication no" >> /etc/ssh/sshd_config && \
-    echo "UsePAM yes" >> /etc/ssh/sshd_config && \
-    echo "X11Forwarding yes" >> /etc/ssh/sshd_config && \
-    echo "PrintMotd no" >> /etc/ssh/sshd_config && \
-    echo "AcceptEnv LANG LC_*" >> /etc/ssh/sshd_config && \
-    echo "Subsystem sftp /usr/lib/openssh/sftp-server" >> /etc/ssh/sshd_config && \
-    if [ -f /etc/pam.d/sshd ]; then \
-        sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd; \
-    fi
-
-# 设置语言环境
-ENV LANG=en_US.UTF-8
-ENV LANGUAGE=en_US:en
-ENV LC_ALL=en_US.UTF-8
-
+# SSH服务安装和配置 (已由脚本完成)
+# 设置语言环境 (已由脚本完成)
 # 清理代理设置，确保最终镜像不包含代理
 ENV http_proxy=""
 ENV https_proxy=""
@@ -276,21 +247,10 @@ RUN echo 'alias jdk8="source /usr/local/bin/jdk 8"' >> /etc/bash.bashrc && \
     echo 'alias jdk17="source /usr/local/bin/jdk 17"' >> /etc/bash.bashrc
 
 #################################################
-# 用户与权限设置
+# 用户与权限设置 (大部分已由脚本完成)
 #################################################
 
-# 用户与SSH设置
-RUN groupadd -g 2000 lush-dev && \
-    useradd -m -u 2034 -g lush-dev shijiashuai && \
-    echo 'shijiashuai:phoenix2024' | chpasswd && \
-    usermod -aG sudo shijiashuai && \
-    echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers && \
-    mkdir -p /workspace && chown -R shijiashuai:lush-dev /workspace && \
-    mkdir -p /data-lush/lush-dev/shijiashuai && \
-    chown -R shijiashuai:lush-dev /data-lush && \
-    chsh -s /usr/bin/zsh shijiashuai
-
-# 切换到普通用户
+# 切换到普通用户 (脚本已创建用户)
 USER shijiashuai
 WORKDIR /home/shijiashuai
 
@@ -318,7 +278,7 @@ RUN wget -q -O /tmp/miniconda.sh https://repo.anaconda.com/miniconda/Miniconda3-
     # Ensure the user owns the config files after modification
     chown shijiashuai:lush-dev $HOME/.bashrc $HOME/.zshrc
 
-# 安装oh-my-zsh和插件
+# 安装oh-my-zsh和插件 (Zsh 已由脚本安装)
 RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended || true && \
     git clone --depth=1 https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-autosuggestions || true && \
     git clone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting || true && \
@@ -339,7 +299,7 @@ RUN echo 'export PATH="/data-lush/lush-dev/shijiashuai/build-tools/apps:$PATH"' 
 # 切换回root用户完成最终配置
 USER root
 
-# 开放SSH端口
+# 开放SSH端口 (已由脚本完成)
 EXPOSE 22
 
 # 设置容器启动命令
@@ -347,4 +307,4 @@ ENTRYPOINT ["/usr/bin/supervisord", "-n", "-c", "/etc/supervisor/conf.d/supervis
 
 # 注意：不在这里切换用户，让 supervisord 以 root 运行
 # 默认工作目录设置（影响进入容器时的默认目录）
-WORKDIR /home/shijiashuai 
+WORKDIR /home/shijiashuai
