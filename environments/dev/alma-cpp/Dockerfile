@@ -2,53 +2,33 @@
 FROM almalinux/9-init:latest
 
 # 设置镜像的元信息
-LABEL maintainer="shijiashuai" description="AlmaLinux C++/Python Dev Environment"
+LABEL maintainer="shijiashuai" description="CentOS for cpp dev"
 
-# --- Run Common AlmaLinux Setup Script ---
-# Installs: sudo, zsh, openssh-server, supervisor, user/group, basic conf
-COPY ../../scripts/common-user-setup-alma.sh /tmp/
-RUN chmod +x /tmp/common-user-setup-alma.sh && \
-    bash /tmp/common-user-setup-alma.sh && \
-    rm /tmp/common-user-setup-alma.sh
-
-# --- Install Environment Specific Tools ---
-# Install Development Tools group and other C++/Python essentials
+# 安装必要的程序
 RUN dnf -y groupinstall "Development Tools" && \
-    dnf -y install \
-    epel-release \
-    cmake \
-    gdb \
-    git \
-    python3-devel \
-    clang \
-    valgrind \
-    vim \
-    xz \
-    zlib-devel \
-    ncurses-devel \
-    bzip2-devel \
-    xz-devel \
-    && dnf -y clean all \
-    && rm -rf /var/cache/dnf/*
+    dnf -y install python3-pip && \
+    pip3 install supervisor && \
+    dnf -y install epel-release cmake sudo gdb git python3 python3-devel clang valgrind vim xz zlib-devel ncurses-devel bzip2-devel xz-devel zsh openssh-server && \
+    dnf clean all
 
-# --- Configure Supervisor ---
-# Base dirs created by script. Define specific programs.
-# Assuming supervisor installed via pip puts config in /etc/supervisor/
-RUN echo '[program:sshd]\ncommand=/usr/sbin/sshd -D\nautostart=true\nautorestart=true\nuser=root\n' >> /etc/supervisor/conf.d/sshd.conf
-# Need a main supervisord.conf file if not created by pip install
-RUN echo '[supervisord]\nnodaemon=true\nuser=root\nlogfile=/var/log/supervisor/supervisord.log\npidfile=/var/run/supervisord.pid\n\n[include]\nfiles = /etc/supervisor/conf.d/*.conf\n' > /etc/supervisord.conf
-# Adjust paths if pip installs config elsewhere (e.g., /usr/local/etc/)
+# 设置 SSH 和用户信息
+RUN ssh-keygen -A && \
+    echo 'root:0306' | chpasswd && \
+    sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config && \
+    groupadd -g 2000 lush-dev && \
+    useradd -m -u 2034 -g lush-dev shijiashuai && \
+    echo '%lush-dev ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers && \
+    mkdir /workspace && chown -R shijiashuai:lush-dev /workspace
 
-# 切换到普通用户
-USER shijiashuai
-WORKDIR /home/shijiashuai
+# 设置 Supervisor
+RUN echo '[supervisord]\nnodaemon=true\n' > /etc/supervisord.conf && \
+    echo '[program:sshd]\ncommand=/usr/sbin/sshd -D\n' >> /etc/supervisord.conf && \
+    echo '[program:zsh]\ncommand=/usr/bin/zsh\nautorestart=false\n' >> /etc/supervisord.conf
 
 # 安装 oh-my-zsh
-RUN rm -rf /home/shijiashuai/.oh-my-zsh && \
-    (git clone https://gitee.com/mirrors/oh-my-zsh.git /home/shijiashuai/.oh-my-zsh || \
-     git clone https://github.com/ohmyzsh/ohmyzsh.git /home/shijiashuai/.oh-my-zsh) && \
-    cp /home/shijiashuai/.oh-my-zsh/templates/zshrc.zsh-template /home/shijiashuai/.zshrc && \
-    chown -R shijiashuai:lush-dev /home/shijiashuai/.oh-my-zsh /home/shijiashuai/.zshrc
+USER shijiashuai
+RUN git clone https://github.com/ohmyzsh/ohmyzsh.git ~/.oh-my-zsh && \
+    cp ~/.oh-my-zsh/templates/zshrc.zsh-template ~/.zshrc
 
 # 切换回 root 用户
 USER root
@@ -57,9 +37,7 @@ USER root
 EXPOSE 22
 
 # 设置 VOLUME
-VOLUME ["/data", "/data1", "/workspace"]
+VOLUME ["/data", "/data1"]
 
-# 设置容器启动命令 - Use Supervisor
-# Ensure the path to supervisord executable and config file are correct
-# Default pip install might put it in /usr/local/bin/
-ENTRYPOINT ["/usr/local/bin/supervisord", "-n", "-c", "/etc/supervisord.conf"]
+# 设置容器启动时运行的命令
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]
