@@ -14,9 +14,6 @@ LABEL about.license_file="https://github.com/marbl/Krona/blob/master/KronaTools/
 LABEL about.license="BSD"
 LABEL about.tags="General"
 
-ARG http_proxy
-ARG https_proxy
-
 ################## INSTALLATION ######################
 USER root
 
