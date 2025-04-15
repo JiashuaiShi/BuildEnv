@@ -1,0 +1,40 @@
+# 通用的安装基准测试的环境
+services:
+  shuai-bench-test:
+    # image: shuai/bench-test:latest # 改为本地构建
+    build:                         # 添加 build 指令
+      context: .                   # 构建上下文为当前目录
+      dockerfile: Dockerfile         # 指定 Dockerfile
+    container_name: shuai-bench-test
+    labels:
+      - "maintainer=shijiashuai"
+      - "description=bench-test dev-environment"
+    hostname: shuai-bench-test
+    privileged: true
+    restart: always
+    shm_size: 16g
+    ipc: host
+    stdin_open: true
+    tty: true
+    # user: shijiashuai 去掉，和supervisord启动权限冲突
+    cap_add:
+      - SYS_PTRACE
+    security_opt:
+      - seccomp=unconfined
+    volumes:
+      - /data:/data
+      - /data1:/data1
+      - /data2:/data2
+      - /data_test:/data_test
+      - /mnt/nas1:/mnt/nas1
+      - /data_melody:/data_melody
+      - /data-melody:/data-melody
+      - /lush_test:/lush_test
+      - /lush-test:/lush-test
+      - /data-lush:/data-lush
+    environment:
+      - TERM=xterm-256color
+      - LANG=en_US.UTF-8
+    ports:
+      - "28960:22"  # SSH端口映射
+    working_dir: /data-lush/lush-dev/shijiashuai
