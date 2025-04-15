@@ -1,0 +1,328 @@
+FROM ubuntu:24.04
+# FROM shuai/ubuntu:24.04
+
+# 设置镜像元信息
+LABEL maintainer="shijiashuai" description="统一开发环境 - C++/Java多版本"
+
+# 接收构建参数
+ARG http_proxy
+ARG https_proxy
+
+# 在构建时设置代理环境变量
+ENV http_proxy=$http_proxy
+ENV https_proxy=$https_proxy
+
+# 避免交互式提示
+ENV DEBIAN_FRONTEND=noninteractive
+
+# 设置时区
+ENV TZ=Asia/Shanghai
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+# 替换apt源为国内镜像（阿里云）
+RUN cp /etc/apt/sources.list /etc/apt/sources.list.bak && \
+    echo "deb http://mirrors.aliyun.com/ubuntu/ noble main restricted universe multiverse" > /etc/apt/sources.list && \
+    echo "deb http://mirrors.aliyun.com/ubuntu/ noble-security main restricted universe multiverse" >> /etc/apt/sources.list && \
+    echo "deb http://mirrors.aliyun.com/ubuntu/ noble-updates main restricted universe multiverse" >> /etc/apt/sources.list && \
+    echo "deb http://mirrors.aliyun.com/ubuntu/ noble-backports main restricted universe multiverse" >> /etc/apt/sources.list
+
+# 添加配置以忽略GPG签名验证和修复Post-Invoke脚本问题
+RUN mkdir -p /etc/apt/apt.conf.d/ && \
+    echo 'APT::Get::AllowUnauthenticated "true";' > /etc/apt/apt.conf.d/99allow-unauthenticated && \
+    echo 'Acquire::AllowInsecureRepositories "true";' >> /etc/apt/apt.conf.d/99allow-unauthenticated && \
+    echo 'Acquire::AllowDowngradeToInsecureRepositories "true";' >> /etc/apt/apt.conf.d/99allow-unauthenticated && \
+    echo 'APT::Update::Post-Invoke-Success { "rm -f /var/cache/apt/archives/*.deb /var/cache/apt/archives/partial/*.deb /var/cache/apt/*.bin || true"; };' > /etc/apt/apt.conf.d/99fixpostrm && \
+    echo 'Dir::Etc::TrustedParts "/etc/apt/keyrings/";' > /etc/apt/apt.conf.d/99keyrings && \
+    mkdir -p /etc/apt/keyrings
+
+# 安装基础组件
+RUN apt-get update -o Acquire::Check-Valid-Until=false -o Acquire::Check-Date=false || true && \
+    apt-get install -y --no-install-recommends --allow-unauthenticated \
+    ca-certificates \
+    gnupg \
+    wget \
+    gpg \
+    curl \
+    apt-transport-https \
+    software-properties-common \
+    && rm -rf /var/lib/apt/lists/* && \
+    apt-get clean || true
+
+#################################################
+# C++开发环境安装部分
+#################################################
+
+# 分步安装基础工具
+RUN apt-get update -o Acquire::Check-Valid-Until=false -o Acquire::Check-Date=false || true && \
+    apt-get install -y --no-install-recommends --allow-unauthenticated \
+    build-essential \
+    cmake \
+    sudo \
+    gdb \
+    git \
+    ninja-build \
+    && rm -rf /var/lib/apt/lists/* && \
+    apt-get clean || true
+
+# 分步安装编译相关工具
+RUN apt-get update -o Acquire::Check-Valid-Until=false -o Acquire::Check-Date=false || true && \
+    apt-get install -y --no-install-recommends --allow-unauthenticated \
+    autoconf \
+    automake \
+    libtool \
+    locales-all \
+    dos2unix \
+    rsync \
+    tar \
+    xz-utils \
+    && rm -rf /var/lib/apt/lists/* && \
+    apt-get clean || true
+
+# 分步安装开发库
+RUN apt-get update -o Acquire::Check-Valid-Until=false -o Acquire::Check-Date=false || true && \
+    apt-get install -y --no-install-recommends --allow-unauthenticated \
+    zlib1g-dev \
+    libncurses5-dev \
+    libbz2-dev \
+    liblzma-dev \
+    && rm -rf /var/lib/apt/lists/* && \
+    apt-get clean || true
+
+# 分步安装编译器工具链
+RUN apt-get update -o Acquire::Check-Valid-Until=false -o Acquire::Check-Date=false || true && \
+    apt-get install -y --no-install-recommends --allow-unauthenticated \
+    g++-13 \
+    gcc-13 \
+    cpp-13 \
+    && rm -rf /var/lib/apt/lists/* && \
+    apt-get clean || true
+
+# 分步安装 clang 相关工具
+RUN apt-get update -o Acquire::Check-Valid-Until=false -o Acquire::Check-Date=false || true && \
+    apt-get install -y --no-install-recommends --allow-unauthenticated \
+    clang \
+    clang-tools \
+    clangd \
+    llvm \
+    lldb \
+    && rm -rf /var/lib/apt/lists/* && \
+    apt-get clean || true
+
+# 安装其他C++工具
+RUN apt-get update -o Acquire::Check-Valid-Until=false -o Acquire::Check-Date=false || true && \
+    apt-get install -y --no-install-recommends --allow-unauthenticated \
+    valgrind \
+    && rm -rf /var/lib/apt/lists/* && \
+    apt-get clean || true
+
+#################################################
+# Java开发环境安装部分
+#################################################
+
+# 安装OpenJDK多个版本
+RUN apt-get update -o Acquire::Check-Valid-Until=false -o Acquire::Check-Date=false || true && \
+    apt-get install -y --no-install-recommends --allow-unauthenticated \
+    openjdk-8-jdk \
+    openjdk-11-jdk \
+    openjdk-17-jdk \
+    && rm -rf /var/lib/apt/lists/* && \
+    apt-get clean || true
+
+# 配置Java alternatives
+RUN mkdir -p /etc/alternatives && \
+    for version in 8 11 17; do \
+        if [ -d "/usr/lib/jvm/java-${version}-openjdk-amd64" ]; then \
+            update-alternatives --install /usr/bin/java java "/usr/lib/jvm/java-${version}-openjdk-amd64/bin/java" ${version}0 || true && \
+            update-alternatives --install /usr/bin/javac javac "/usr/lib/jvm/java-${version}-openjdk-amd64/bin/javac" ${version}0 || true && \
+            update-alternatives --install /usr/bin/jar jar "/usr/lib/jvm/java-${version}-openjdk-amd64/bin/jar" ${version}0 || true && \
+            update-alternatives --install /usr/bin/javadoc javadoc "/usr/lib/jvm/java-${version}-openjdk-amd64/bin/javadoc" ${version}0 || true; \
+        fi \
+    done
+
+# 设置默认JDK版本为JDK 11
+RUN if [ -d "/usr/lib/jvm/java-11-openjdk-amd64" ]; then \
+        update-alternatives --set java "/usr/lib/jvm/java-11-openjdk-amd64/bin/java" || true && \
+        update-alternatives --set javac "/usr/lib/jvm/java-11-openjdk-amd64/bin/javac" || true && \
+        update-alternatives --set jar "/usr/lib/jvm/java-11-openjdk-amd64/bin/jar" || true && \
+        update-alternatives --set javadoc "/usr/lib/jvm/java-11-openjdk-amd64/bin/javadoc" || true; \
+    fi
+
+ENV JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
+ENV PATH=$JAVA_HOME/bin:$PATH
+
+# 安装Java开发工具
+RUN apt-get update -o Acquire::Check-Valid-Until=false -o Acquire::Check-Date=false || true && \
+    apt-get install -y --no-install-recommends --allow-unauthenticated \
+    maven \
+    gradle \
+    && rm -rf /var/lib/apt/lists/* && \
+    apt-get clean || true
+
+#################################################
+# Python开发环境安装部分
+#################################################
+
+# 安装Python相关工具
+RUN apt-get update -o Acquire::Check-Valid-Until=false -o Acquire::Check-Date=false || true && \
+    apt-get install -y --no-install-recommends --allow-unauthenticated \
+    python3 \
+    python3-dev \
+    python3-pip \
+    python3-venv \
+    && rm -rf /var/lib/apt/lists/* && \
+    apt-get clean || true
+
+#################################################
+# 通用开发工具安装
+#################################################
+
+# 安装通用开发工具（除了SSH相关）
+RUN apt-get update -o Acquire::Check-Valid-Until=false -o Acquire::Check-Date=false || true && \
+    apt-get install -y --no-install-recommends --allow-unauthenticated \
+    vim \
+    neovim \
+    htop \
+    less \
+    zsh \
+    supervisor \
+    tmux \
+    && rm -rf /var/lib/apt/lists/* && \
+    apt-get clean || true && \
+    mkdir -p /etc/supervisor/conf.d
+
+# 配置 supervisor
+RUN mkdir -p /etc/supervisor/conf.d && \
+    mkdir -p /var/log/supervisor && \
+    touch /var/log/supervisor/supervisord.log && \
+    touch /var/log/supervisor/sshd.log && \
+    touch /var/log/supervisor/sshd.err && \
+    chown -R root:root /var/log/supervisor && \
+    chmod -R 755 /var/log/supervisor
+
+COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+RUN chmod 644 /etc/supervisor/conf.d/supervisord.conf
+
+# SSH服务安装和配置
+RUN apt-get update -o Acquire::Check-Valid-Until=false -o Acquire::Check-Date=false || true && \
+    apt-get install -y --no-install-recommends --allow-unauthenticated \
+    openssh-server \
+    && rm -rf /var/lib/apt/lists/* && \
+    apt-get clean || true && \
+    mkdir -p /var/run/sshd && \
+    mkdir -p /etc/ssh && \
+    echo "# Package generated configuration file" > /etc/ssh/sshd_config && \
+    echo "# See the sshd_config(5) manpage for details" >> /etc/ssh/sshd_config && \
+    echo "PermitRootLogin yes" >> /etc/ssh/sshd_config && \
+    echo "PasswordAuthentication yes" >> /etc/ssh/sshd_config && \
+    echo "ChallengeResponseAuthentication no" >> /etc/ssh/sshd_config && \
+    echo "UsePAM yes" >> /etc/ssh/sshd_config && \
+    echo "X11Forwarding yes" >> /etc/ssh/sshd_config && \
+    echo "PrintMotd no" >> /etc/ssh/sshd_config && \
+    echo "AcceptEnv LANG LC_*" >> /etc/ssh/sshd_config && \
+    echo "Subsystem sftp /usr/lib/openssh/sftp-server" >> /etc/ssh/sshd_config && \
+    if [ -f /etc/pam.d/sshd ]; then \
+        sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd; \
+    fi
+
+# 设置语言环境
+ENV LANG=en_US.UTF-8
+ENV LANGUAGE=en_US:en
+ENV LC_ALL=en_US.UTF-8
+
+# 清理代理设置，确保最终镜像不包含代理
+ENV http_proxy=""
+ENV https_proxy=""
+
+#################################################
+# 工具配置部分
+#################################################
+
+# 确保C++17支持
+RUN if [ -f /usr/bin/g++-13 ]; then \
+        update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-13 100 && \
+        update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-13 100 && \
+        g++ --version; \
+    fi
+
+# 创建JDK版本切换脚本
+RUN echo '#!/bin/bash' > /usr/local/bin/jdk && \
+    echo 'case "$1" in' >> /usr/local/bin/jdk && \
+    echo '  "8")' >> /usr/local/bin/jdk && \
+    echo '    export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64' >> /usr/local/bin/jdk && \
+    echo '    export PATH=$JAVA_HOME/bin:$PATH' >> /usr/local/bin/jdk && \
+    echo '    echo "已切换到 JDK 8"' >> /usr/local/bin/jdk && \
+    echo '    ;;' >> /usr/local/bin/jdk && \
+    echo '  "11")' >> /usr/local/bin/jdk && \
+    echo '    export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64' >> /usr/local/bin/jdk && \
+    echo '    export PATH=$JAVA_HOME/bin:$PATH' >> /usr/local/bin/jdk && \
+    echo '    echo "已切换到 JDK 11"' >> /usr/local/bin/jdk && \
+    echo '    ;;' >> /usr/local/bin/jdk && \
+    echo '  "17")' >> /usr/local/bin/jdk && \
+    echo '    export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64' >> /usr/local/bin/jdk && \
+    echo '    export PATH=$JAVA_HOME/bin:$PATH' >> /usr/local/bin/jdk && \
+    echo '    echo "已切换到 JDK 17"' >> /usr/local/bin/jdk && \
+    echo '    ;;' >> /usr/local/bin/jdk && \
+    echo '  *)' >> /usr/local/bin/jdk && \
+    echo '    echo "用法: jdk [版本]"' >> /usr/local/bin/jdk && \
+    echo '    echo "可用版本: 8, 11, 17"' >> /usr/local/bin/jdk && \
+    echo '    echo "当前版本: $(java -version 2>&1 | head -n 1)"' >> /usr/local/bin/jdk && \
+    echo '    ;;' >> /usr/local/bin/jdk && \
+    echo 'esac' >> /usr/local/bin/jdk && \
+    chmod +x /usr/local/bin/jdk
+
+# 创建JDK别名用于快速切换
+RUN echo 'alias jdk8="source /usr/local/bin/jdk 8"' >> /etc/bash.bashrc && \
+    echo 'alias jdk11="source /usr/local/bin/jdk 11"' >> /etc/bash.bashrc && \
+    echo 'alias jdk17="source /usr/local/bin/jdk 17"' >> /etc/bash.bashrc
+
+#################################################
+# 用户与权限设置
+#################################################
+
+# 用户与SSH设置
+RUN groupadd -g 2000 lush-dev && \
+    useradd -m -u 2034 -g lush-dev shijiashuai && \
+    echo 'shijiashuai:phoenix2024' | chpasswd && \
+    usermod -aG sudo shijiashuai && \
+    echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers && \
+    mkdir -p /workspace && chown -R shijiashuai:lush-dev /workspace && \
+    mkdir -p /data-lush/lush-dev/shijiashuai && \
+    chown -R shijiashuai:lush-dev /data-lush && \
+    chsh -s /usr/bin/zsh shijiashuai
+
+# 切换到普通用户
+USER shijiashuai
+WORKDIR /home/shijiashuai
+
+#################################################
+# 用户环境配置
+#################################################
+
+# 安装oh-my-zsh和插件
+RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended || true && \
+    git clone --depth=1 https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-autosuggestions || true && \
+    git clone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting || true && \
+    sed -i 's/plugins=(git)/plugins=(git maven gradle zsh-autosuggestions zsh-syntax-highlighting)/' $HOME/.zshrc || true
+
+# 添加JDK切换别名
+RUN echo 'alias jdk8="source /usr/local/bin/jdk 8"' >> $HOME/.zshrc && \
+    echo 'alias jdk11="source /usr/local/bin/jdk 11"' >> $HOME/.zshrc && \
+    echo 'alias jdk17="source /usr/local/bin/jdk 17"' >> $HOME/.zshrc
+
+# 添加自定义工具到PATH
+RUN echo 'export PATH="/data-lush/lush-dev/shijiashuai/build-tools/apps:$PATH"' >> /home/shijiashuai/.zshrc && \
+    echo 'export PATH="/data-lush/lush-dev/shijiashuai/build-tools/apps:$PATH"' >> /home/shijiashuai/.bashrc && \
+    chown shijiashuai:lush-dev /home/shijiashuai/.zshrc /home/shijiashuai/.bashrc
+
+# 切换回root用户完成最终配置
+USER root
+
+# 开放SSH端口
+EXPOSE 22
+
+# 设置容器启动命令
+ENTRYPOINT ["/usr/bin/supervisord", "-n", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+
+# 注意：不在这里切换用户，让 supervisord 以 root 运行
+# 默认工作目录设置（影响进入容器时的默认目录）
+WORKDIR /home/shijiashuai 
