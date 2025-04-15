@@ -1,0 +1,44 @@
+{
+    "name": "Ubuntu Dev All (C++/Java/Conda)", // 容器名称
+    "dockerComposeFile": "../docker-compose.yaml", // 指向上一级的 docker-compose.yaml
+    "service": "shuai-dev",                  // 使用 docker-compose.yaml 中的 'shuai-dev' 服务
+    "workspaceFolder": "/home/shijiashuai/workspace", // 容器内的工作目录，映射本地项目
+    // "overrideCommand": false, // 如果需要确保 CMD 或 ENTRYPOINT 不被覆盖，可以取消注释
+
+    // 在容器内自动安装 VS Code 扩展
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-vscode.cpptools",             // C/C++
+                "ms-python.python",               // Python
+                "ms-toolsai.jupyter",             // Jupyter Notebook 支持 (如果需要)
+                "vscjava.vscode-java-pack",       // Java Extension Pack
+                "ms-azuretools.vscode-docker",    // Docker
+                "eamodio.gitlens",                // GitLens
+                "mhutchie.git-graph",             // Git Graph
+                "donjayamanne.githistory",        // Git History
+                "zsh-users.zsh-syntax-highlighting", // Zsh 语法高亮 (可能需要额外配置或已由 oh-my-zsh 处理)
+                "formulahendry.code-runner"        // Code Runner (可选，用于快速运行代码片段)
+            ],
+            // 可以在这里添加 VS Code 的 settings.json 配置
+            "settings": {
+                "terminal.integrated.defaultProfile.linux": "zsh", // 默认终端设为 zsh
+                "terminal.integrated.profiles.linux": {
+                    "zsh": {
+                        "path": "/usr/bin/zsh"
+                    }
+                }
+                // "java.jdt.ls.java.home": "/usr/lib/jvm/java-11-openjdk-amd64" // 可选，明确指定 Java Home
+            }
+        }
+    },
+
+    // 在容器创建后执行的命令 (可选)
+    // "postCreateCommand": "conda --version && gcc --version && java -version",
+
+    // 转发端口 (可选，如果服务需要从本地访问)
+    // "forwardPorts": [8888], // 例如转发 Jupyter Notebook 端口
+
+    // 在容器内运行命令和 VS Code 服务的用户
+    "remoteUser": "shijiashuai"
+} 

@@ -248,41 +248,47 @@ RUN echo 'alias jdk8="source /usr/local/bin/jdk 8"' >> /etc/bash.bashrc && \
 USER shijiashuai
 WORKDIR /home/shijiashuai
 
-# --- Add Miniconda Installation ---
-# 安装Miniconda - 使用更可靠的下载方式和超时设置
-RUN curl -s -L --connect-timeout 30 --max-time 300 -o /tmp/miniconda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh || \
-    wget -q --timeout=300 -O /tmp/miniconda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh || \
-    echo "Failed to download Miniconda"
+#################################################
+# 用户环境配置
+#################################################
 
-# 安装并配置Miniconda - 简化安装过程
-RUN if [ -f /tmp/miniconda.sh ]; then \
-        bash /tmp/miniconda.sh -b -p $HOME/miniconda && \
-        rm -f /tmp/miniconda.sh && \
-        export PATH="$HOME/miniconda/bin:$PATH" && \
-        echo 'export PATH="$HOME/miniconda/bin:$PATH"' >> $HOME/.bashrc && \
-        echo 'export PATH="$HOME/miniconda/bin:$PATH"' >> $HOME/.zshrc && \
-        $HOME/miniconda/bin/conda config --set auto_activate_base false && \
-        $HOME/miniconda/bin/conda config --set ssl_verify false && \
-        $HOME/miniconda/bin/conda config --set remote_read_timeout_secs 600 && \
-        $HOME/miniconda/bin/conda config --set remote_connect_timeout_secs 60 && \
-        $HOME/miniconda/bin/conda config --set remote_max_retries 10; \
-    fi
-# --- End Miniconda Installation ---
+# 安装 Miniconda
+RUN wget -q -O /tmp/miniconda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh && \
+    chmod +x /tmp/miniconda.sh && \
+    export CONDA_DISABLE_PROGRESS_BARS=1 && \
+    export PYTHONIOENCODING=utf8 && \
+    export PYTHONUNBUFFERED=1 && \
+    bash /tmp/miniconda.sh -b -p $HOME/miniconda && \
+    rm -f /tmp/miniconda.sh && \
+    $HOME/miniconda/bin/conda config --set always_yes yes && \
+    $HOME/miniconda/bin/conda config --set auto_activate_base false && \
+    $HOME/miniconda/bin/conda config --set ssl_verify false && \
+    $HOME/miniconda/bin/conda config --set remote_read_timeout_secs 600 && \
+    $HOME/miniconda/bin/conda config --set remote_connect_timeout_secs 60 && \
+    $HOME/miniconda/bin/conda config --set concurrent_download_threads 1 && \
+    $HOME/miniconda/bin/conda config --set remote_max_retries 10 && \
+    echo 'export PATH="$HOME/miniconda/bin:$PATH"' >> $HOME/.bashrc && \
+    echo 'export PATH="$HOME/miniconda/bin:$PATH"' >> $HOME/.zshrc && \
+    # Ensure the user owns the config files after modification
+    chown shijiashuai:lush-dev $HOME/.bashrc $HOME/.zshrc
 
-# 添加自定义工具到PATH (如果 common-user-setup.sh 没有做这个)
-# RUN echo 'export PATH="/data-lush/lush-dev/shijiashuai/build-tools/apps:$PATH"' >> $HOME/.zshrc && \
-#    echo 'export PATH="/data-lush/lush-dev/shijiashuai/build-tools/apps:$PATH"' >> $HOME/.bashrc
+# 安装oh-my-zsh和插件 (Zsh 已由脚本安装)
+RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended || true && \
+    git clone --depth=1 https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-autosuggestions || true && \
+    git clone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting || true && \
+    sed -i 's/plugins=(git)/plugins=(git maven gradle conda zsh-autosuggestions zsh-syntax-highlighting)/' $HOME/.zshrc || true && \
+    # Ensure the user owns the config file after modification
+    chown shijiashuai:lush-dev $HOME/.zshrc
 
-# --- Oh My Zsh installation (If not handled by common-user-setup.sh) ---
-# RUN curl -fsSL --connect-timeout 30 --max-time 120 https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh -o /tmp/install-zsh.sh && \
-#    (sh /tmp/install-zsh.sh --unattended || echo "Failed to install oh-my-zsh") && \
-#    rm -f /tmp/install-zsh.sh && \
-#    mkdir -p ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins && \
-#    (git clone --depth=1 https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-autosuggestions || true) && \
-#    (git clone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting || true) && \
-#    if [ -f $HOME/.zshrc ]; then \
-#        sed -i 's/plugins=(git)/plugins=(git zsh-autosuggestions zsh-syntax-highlighting)/' $HOME/.zshrc || true; \
-#    fi
+# 添加JDK切换别名
+RUN echo 'alias jdk8="source /usr/local/bin/jdk 8"' >> $HOME/.zshrc && \
+    echo 'alias jdk11="source /usr/local/bin/jdk 11"' >> $HOME/.zshrc && \
+    echo 'alias jdk17="source /usr/local/bin/jdk 17"' >> $HOME/.zshrc
+
+# 添加自定义工具到PATH
+RUN echo 'export PATH="/data-lush/lush-dev/shijiashuai/build-tools/apps:$PATH"' >> /home/shijiashuai/.zshrc && \
+    echo 'export PATH="/data-lush/lush-dev/shijiashuai/build-tools/apps:$PATH"' >> /home/shijiashuai/.bashrc && \
+    chown shijiashuai:lush-dev /home/shijiashuai/.zshrc /home/shijiashuai/.bashrc
 
 # 切换回root用户完成最终配置
 USER root
