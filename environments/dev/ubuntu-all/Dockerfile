@@ -307,7 +307,7 @@ RUN if [ -x "$HOME/miniconda/bin/pip" ]; then \
 USER root
 
 # Expose Netdata port (optional)
-EXPOSE 19999
+EXPOSE 28970
 
 # 开放SSH端口 (已由脚本完成)
 EXPOSE 22
