@@ -1,0 +1,50 @@
+# 启动容器
+# docker-compose up -d
+# 单独标记和构建镜像
+# docker build -t jiashuai/alma_9 .
+
+version: '3.8'
+services:
+  alma_9:
+    labels:
+      version: "1.0"
+      description: "AlmaLinux 9 with C++/Java/Python development tools managed by Supervisor"
+    container_name: jiashuai.alma_9
+    environment:
+      http_proxy: http://172.19.11.241:443
+      https_proxy: http://172.19.11.241:443
+      no_proxy: localhost,127.*,10.*,172.16.*
+    hostname: alma_9
+    privileged: true
+    restart: always
+    shm_size: 16g
+    ipc: host
+    stdin_open: true # 保持stdin开放
+    tty: true        # TTY is needed for supervisord in the foreground
+    cap_add:
+      - SYS_PTRACE
+    security_opt:
+      - seccomp=unconfined
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      # Map the workspace
+      - /data/lush-dev/shijiashuai/workspace:/workspace
+      # Keep existing data volume mappings
+      - /data:/data
+      - /data1:/data1
+    ports:
+      # Map the SSH port defined in the Dockerfile (22) to host port 28974
+      - "28974:22"
+    # Run container as this user:group (defined in Dockerfile)
+    # Note: Supervisord runs as root (defined in supervisord.conf),
+    # but interactive shells via docker exec or ssh will use this user.
+    # If direct interaction primarily uses `docker exec` or `ssh`,
+    # running the main process (supervisord) as root is fine.
+    # If you need the *initial* process to be the user, supervisord
+    # would need configuration changes, or don't use supervisord.
+    user: "2034:2000"
+    working_dir: /workspace
+    # command: ["zsh"] # REMOVED: Command is now set in Dockerfile CMD to run supervisord
+    
