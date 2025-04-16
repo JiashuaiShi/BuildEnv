@@ -3,8 +3,10 @@ services:
   shuai-bench-test:
     # image: shuai/bench-test:latest # 改为本地构建
     build:                         # 添加 build 指令
-      context: .                   # 构建上下文为当前目录
-      dockerfile: Dockerfile         # 指定 Dockerfile
+      # context: .                   # 构建上下文为当前目录
+      # dockerfile: Dockerfile         # 指定 Dockerfile
+      context: ../ubuntu-all         # 构建上下文指向 ubuntu-all 目录
+      dockerfile: Dockerfile         # 使用 ubuntu-all 目录下的 Dockerfile
     container_name: shuai-bench-test
     labels:
       - "maintainer=shijiashuai"

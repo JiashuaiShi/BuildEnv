@@ -187,8 +187,14 @@ RUN apt-get update -o Acquire::Check-Valid-Until=false -o Acquire::Check-Date=fa
     htop \
     less \
     tmux \
+    perl \
     && rm -rf /var/lib/apt/lists/* && \
     apt-get clean || true
+
+# --- Add Netdata Installation ---
+RUN apt-get update -o Acquire::Check-Valid-Until=false -o Acquire::Check-Date=false || true && \
+    apt-get install -y curl && \
+    bash <(curl -Ss https://my-netdata.io/kickstart.sh) --dont-wait --non-interactive || echo "Netdata installation skipped or failed"
 
 # 配置 supervisor (基础目录已由脚本创建)
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
@@ -290,8 +296,18 @@ RUN echo 'export PATH="/data-lush/lush-dev/shijiashuai/build-tools/apps:$PATH"' 
     echo 'export PATH="/data-lush/lush-dev/shijiashuai/build-tools/apps:$PATH"' >> /home/shijiashuai/.bashrc && \
     chown shijiashuai:lush-dev /home/shijiashuai/.zshrc /home/shijiashuai/.bashrc
 
+# --- Install Python Packages using Conda's pip ---
+RUN if [ -x "$HOME/miniconda/bin/pip" ]; then \
+        $HOME/miniconda/bin/pip install --no-cache-dir matplotlib psrecord; \
+    else \
+        echo "Miniconda pip not found, skipping matplotlib/psrecord installation."; \
+    fi
+
 # 切换回root用户完成最终配置
 USER root
+
+# Expose Netdata port (optional)
+EXPOSE 19999
 
 # 开放SSH端口 (已由脚本完成)
 EXPOSE 22
