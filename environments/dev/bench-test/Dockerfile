@@ -1,7 +1,7 @@
 FROM ubuntu:24.04
 
 # 设置镜像元信息
-LABEL maintainer="shijiashuai" description="Benchmark Testing Environment"
+LABEL maintainer="shijiashuai" description="Comprehensive Dev Environment (C++/Java/Conda)"
 
 # 避免交互式提示
 ENV DEBIAN_FRONTEND=noninteractive
@@ -94,6 +94,26 @@ RUN apt-get update -o Acquire::Check-Valid-Until=false -o Acquire::Check-Date=fa
     && rm -rf /var/lib/apt/lists/* && \\
     apt-get clean || true
 
+# --- Add Clang Installation --- 
+# 分步安装 clang 相关工具
+RUN apt-get update -o Acquire::Check-Valid-Until=false -o Acquire::Check-Date=false || true && \\
+    apt-get install -y --no-install-recommends --allow-unauthenticated \\
+    clang \\
+    clang-tools \\
+    clangd \\
+    llvm \\
+    lldb \\
+    && rm -rf /var/lib/apt/lists/* && \\
+    apt-get clean || true
+
+# --- Add Valgrind (if not already present) ---
+# 安装其他C++工具
+RUN apt-get update -o Acquire::Check-Valid-Until=false -o Acquire::Check-Date=false || true && \\
+    apt-get install -y --no-install-recommends --allow-unauthenticated \\
+    valgrind \\
+    && rm -rf /var/lib/apt/lists/* && \\
+    apt-get clean || true
+
 #################################################
 # Python Environment Installation
 #################################################
@@ -109,25 +129,61 @@ RUN apt-get update -o Acquire::Check-Valid-Until=false -o Acquire::Check-Date=fa
     apt-get clean || true
 
 #################################################
-# Benchmark Specific Tools Installation (Placeholder)
+# Java Environment Installation
 #################################################
 
-# Add RUN commands here to install necessary benchmark tools, libraries, or dependencies
-# Example:
-# RUN apt-get update && apt-get install -y some-benchmark-tool another-lib
-# RUN pip3 install some-python-benchmark-lib
+# 安装OpenJDK多个版本
+RUN apt-get update -o Acquire::Check-Valid-Until=false -o Acquire::Check-Date=false || true && \\
+    apt-get install -y --no-install-recommends --allow-unauthenticated \\
+    openjdk-8-jdk \\
+    openjdk-11-jdk \\
+    openjdk-17-jdk \\
+    && rm -rf /var/lib/apt/lists/* && \\
+    apt-get clean || true
+
+# 配置Java alternatives
+RUN mkdir -p /etc/alternatives && \\
+    for version in 8 11 17; do \\
+        if [ -d "/usr/lib/jvm/java-${version}-openjdk-amd64" ]; then \\
+            update-alternatives --install /usr/bin/java java "/usr/lib/jvm/java-${version}-openjdk-amd64/bin/java" ${version}0 || true && \\
+            update-alternatives --install /usr/bin/javac javac "/usr/lib/jvm/java-${version}-openjdk-amd64/bin/javac" ${version}0 || true && \\
+            update-alternatives --install /usr/bin/jar jar "/usr/lib/jvm/java-${version}-openjdk-amd64/bin/jar" ${version}0 || true && \\
+            update-alternatives --install /usr/bin/javadoc javadoc "/usr/lib/jvm/java-${version}-openjdk-amd64/bin/javadoc" ${version}0 || true; \\
+        fi \\
+    done
+
+# 设置默认JDK版本为JDK 11
+RUN if [ -d "/usr/lib/jvm/java-11-openjdk-amd64" ]; then \\
+        update-alternatives --set java "/usr/lib/jvm/java-11-openjdk-amd64/bin/java" || true && \\
+        update-alternatives --set javac "/usr/lib/jvm/java-11-openjdk-amd64/bin/javac" || true && \\
+        update-alternatives --set jar "/usr/lib/jvm/java-11-openjdk-amd64/bin/jar" || true && \\
+        update-alternatives --set javadoc "/usr/lib/jvm/java-11-openjdk-amd64/bin/javadoc" || true; \\
+    fi
+
+ENV JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
+ENV PATH=$JAVA_HOME/bin:$PATH
+
+# 安装Java开发工具
+RUN apt-get update -o Acquire::Check-Valid-Until=false -o Acquire::Check-Date=false || true && \\
+    apt-get install -y --no-install-recommends --allow-unauthenticated \\
+    maven \\
+    gradle \\
+    && rm -rf /var/lib/apt/lists/* && \\
+    apt-get clean || true
 
 #################################################
 # Common Tools Installation
 #################################################
 
-# Install minimal common tools
+# Install common tools (add neovim, tmux)
 # Note: zsh, supervisor already installed by common script
 RUN apt-get update -o Acquire::Check-Valid-Until=false -o Acquire::Check-Date=false || true && \\
     apt-get install -y --no-install-recommends --allow-unauthenticated \\
     vim \\
+    neovim \\
     htop \\
     less \\
+    tmux \\
     && rm -rf /var/lib/apt/lists/* && \\
     apt-get clean || true
 
@@ -147,14 +203,81 @@ RUN if [ -f /usr/bin/g++-13 ]; then \\
         g++ --version; \\
     fi
 
+# --- Add Java Version Switching Script/Aliases ---
+# 创建JDK版本切换脚本
+RUN echo '#!/bin/bash' > /usr/local/bin/jdk && \\
+    echo 'case "$1" in' >> /usr/local/bin/jdk && \\
+    echo '  "8")' >> /usr/local/bin/jdk && \\
+    echo '    export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64' >> /usr/local/bin/jdk && \\
+    echo '    export PATH=$JAVA_HOME/bin:$PATH' >> /usr/local/bin/jdk && \\
+    echo '    echo "已切换到 JDK 8"' >> /usr/local/bin/jdk && \\
+    echo '    ;;' >> /usr/local/bin/jdk && \\
+    echo '  "11")' >> /usr/local/bin/jdk && \\
+    echo '    export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64' >> /usr/local/bin/jdk && \\
+    echo '    export PATH=$JAVA_HOME/bin:$PATH' >> /usr/local/bin/jdk && \\
+    echo '    echo "已切换到 JDK 11"' >> /usr/local/bin/jdk && \\
+    echo '    ;;' >> /usr/local/bin/jdk && \\
+    echo '  "17")' >> /usr/local/bin/jdk && \\
+    echo '    export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64' >> /usr/local/bin/jdk && \\
+    echo '    export PATH=$JAVA_HOME/bin:$PATH' >> /usr/local/bin/jdk && \\
+    echo '    echo "已切换到 JDK 17"' >> /usr/local/bin/jdk && \\
+    echo '    ;;' >> /usr/local/bin/jdk && \\
+    echo '  *)' >> /usr/local/bin/jdk && \\
+    echo '    echo "用法: jdk [版本]"' >> /usr/local/bin/jdk && \\
+    echo '    echo "可用版本: 8, 11, 17"' >> /usr/local/bin/jdk && \\
+    echo '    echo "当前版本: $(java -version 2>&1 | head -n 1)"' >> /usr/local/bin/jdk && \\
+    echo '    ;;' >> /usr/local/bin/jdk && \\
+    echo 'esac' >> /usr/local/bin/jdk && \\
+    chmod +x /usr/local/bin/jdk
+
+# 创建JDK别名用于快速切换 (Add to user profile? common script might handle .bashrc/.zshrc)
+# Let's add to /etc/profile.d for system-wide effect for login shells
+RUN echo 'alias jdk8="source /usr/local/bin/jdk 8"' > /etc/profile.d/jdk_aliases.sh && \
+    echo 'alias jdk11="source /usr/local/bin/jdk 11"' >> /etc/profile.d/jdk_aliases.sh && \
+    echo 'alias jdk17="source /usr/local/bin/jdk 17"' >> /etc/profile.d/jdk_aliases.sh
+
 # Switch to user (already created by common script)
 USER shijiashuai
 WORKDIR /home/shijiashuai
 
-# --- Oh My Zsh installation (Optional - if needed and not handled by common script) ---
-# RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended || true
+# --- Add Conda Installation --- 
+# 安装Miniconda - 使用更可靠的下载方式和超时设置
+RUN curl -s -L --connect-timeout 30 --max-time 300 -o /tmp/miniconda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh || \\
+    wget -q --timeout=300 -O /tmp/miniconda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh || \\
+    echo "Failed to download Miniconda"
+
+# 安装并配置Miniconda - 简化安装过程
+RUN if [ -f /tmp/miniconda.sh ]; then \\
+        bash /tmp/miniconda.sh -b -p $HOME/miniconda && \\
+        rm -f /tmp/miniconda.sh && \\
+        export PATH="$HOME/miniconda/bin:$PATH" && \\
+        echo 'export PATH="$HOME/miniconda/bin:$PATH"' >> $HOME/.bashrc && \\
+        echo 'export PATH="$HOME/miniconda/bin:$PATH"' >> $HOME/.zshrc && \\
+        $HOME/miniconda/bin/conda config --set auto_activate_base false && \\
+        $HOME/miniconda/bin/conda config --set ssl_verify false && \\
+        $HOME/miniconda/bin/conda config --set remote_read_timeout_secs 600 && \\
+        $HOME/miniconda/bin/conda config --set remote_connect_timeout_secs 60 && \\
+        $HOME/miniconda/bin/conda config --set remote_max_retries 10; \\
+        # Ensure user owns files modified in this step
+        chown shijiashuai:lush-dev $HOME/.bashrc $HOME/.zshrc; \
+    fi
+
+# --- Oh My Zsh installation/configuration (Optional - refine based on common script) ---
+# Assuming common script installs base zsh & oh-my-zsh, just add plugins
+RUN if [ -d "$HOME/.oh-my-zsh" ]; then \
+        mkdir -p ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins && \
+        (git clone --depth=1 https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-autosuggestions || true) && \
+        (git clone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting || true) && \
+        if [ -f $HOME/.zshrc ]; then \
+            sed -i 's/plugins=(git)/plugins=(git maven gradle conda zsh-autosuggestions zsh-syntax-highlighting)/' $HOME/.zshrc || true; \
+            # Ensure user owns the modified .zshrc
+            chown shijiashuai:lush-dev $HOME/.zshrc; \
+        fi; \
+    fi
 
 # --- Add user customizations like .bashrc, .zshrc modifications if needed ---
+# Example: Adding custom tools path if not handled elsewhere
+# RUN echo 'export PATH="/path/to/custom/tools:$PATH"' >> $HOME/.zshrc && chown shijiashuai:lush-dev $HOME/.zshrc
 
 # Switch back to root for entrypoint
 USER root
