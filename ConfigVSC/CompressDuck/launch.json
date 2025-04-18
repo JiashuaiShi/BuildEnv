@@ -1,0 +1,35 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "SwiftDuck_Debug",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/SwiftDuck_debug",
+            "args": [
+                "-i", "/data/lush-dev/liuweicong/data/fq/V100007471_L01_501_1.fq",
+                "-o", "/home/shijiashuai/shijiashuai/07_vscode/swiftduck/build/out.sdz",
+                "-c"
+            ],
+            // "args": [
+            //     "-i", "/home/shijiashuai/shijiashuai/07_vscode/swiftduck/build/out.sdz",
+            //     "-o", "/home/shijiashuai/shijiashuai/07_vscode/swiftduck/build/in.fq",
+            //     "-d"
+            // ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "为 gdb 启用整齐打印",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "preLaunchTask": "Build",
+            "miDebuggerPath": "/usr/bin/gdb"
+        }
+    ]
+}
