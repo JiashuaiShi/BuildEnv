@@ -1,11 +1,11 @@
 services:
-  shuai-alma-init:
-    image: shuai/alma-init:1.0
-    container_name: shuai-alma-init
+  shuai-alma-dev:
+    image: shuai/alma-dev:1.0
+    container_name: shuai-alma-dev
     labels:
-       - "maintainer=shijiashuai"
-       - "description=alma base systemd"
-    hostname: shuai-alma-init
+      - "maintainer=shijiashuai"
+      - "description=AlmaLinux 9 for C++/Java/Python dev with systemd"
+    hostname: shuai-alma-dev
     privileged: true
     restart: always
     shm_size: 16g
@@ -38,6 +38,6 @@ services:
       - CONDA_DISABLE_PROGRESS_BARS=1
     ports:
       - "28965:22"
-    working_dir:  /data-lush/lush-dev/shijiashuai
+    working_dir: /home/shijiashuai
     # Add signal for systemd graceful shutdown
     stop_signal: SIGRTMIN+3
