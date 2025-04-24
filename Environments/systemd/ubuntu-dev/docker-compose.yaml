@@ -4,7 +4,7 @@ services:
     container_name: shuai-ubuntu-dev
     labels:
       - "maintainer=shijiashuai"
-      - "description=ubuntu base systemd"
+      - "description=Ubuntu base systemd with dev tools"
     hostname: shuai-ubuntu-dev
     privileged: true
     restart: always

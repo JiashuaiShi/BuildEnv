@@ -1,11 +1,11 @@
 services:
-  shuai-alma9-dev:
+  shuai-alma-dev:
     image: shuai/alma9-dev:1.0
-    container_name: shuai-alma9-dev
+    container_name: shuai-alma-dev
     labels:
       - "maintainer=shijiashuai"
-      - "description=dev environment systemd"
-    hostname: shuai-alma9-dev
+      - "description=AlmaLinux 9 base systemd with dev tools"
+    hostname: shuai-alma-dev
     privileged: true
     restart: always
     shm_size: 16g
@@ -21,8 +21,8 @@ services:
       context: .
       dockerfile: Dockerfile
       # args:
-      #   - http_proxy=http://172.19.11.241:443
-      #   - https_proxy=http://172.19.11.241:443
+      #   - http_proxy=${HTTP_PROXY}
+      #   - https_proxy=${HTTPS_PROXY}
     volumes:
       - /data:/data
       - /data1:/data1
@@ -36,8 +36,9 @@ services:
       - TERM=xterm-256color
       - LANG=en_US.UTF-8
       - CONDA_DISABLE_PROGRESS_BARS=1
+      # - SSH_PASSWORD=phoenix2024
     ports:
       - "28965:22"
-    working_dir: /data-lush/lush-dev/shijiashuai
+    working_dir: /home/shijiashuai
     # Add signal for systemd graceful shutdown
     stop_signal: SIGRTMIN+3
