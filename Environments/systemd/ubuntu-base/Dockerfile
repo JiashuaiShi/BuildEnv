@@ -11,8 +11,8 @@ FROM ubuntu:noble
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Set Locale
-ENV LANG C.UTF-8
-ENV LC_ALL C.UTF-8
+ENV LANG=C.UTF-8
+ENV LC_ALL=C.UTF-8
 
 # Install systemd, essential dev tools, and dependencies.
 RUN apt-get update \
@@ -56,24 +56,13 @@ RUN systemctl mask \
 RUN systemctl enable dbus.service
 RUN systemctl enable systemd-logind.service # Enabled for dev env
 
-# Create a non-root user with sudo privileges
-RUN useradd --create-home --shell /bin/bash shijiashuai && \
-    echo "shijiashuai:password" | chpasswd && \
-    adduser shijiashuai sudo
-# Set passwordless sudo for the user (optional, for convenience)
-RUN echo "shijiashuai ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers.d/shijiashuai-nopasswd
-
-# Set default user
-USER shijiashuai
-WORKDIR /home/shijiashuai
-
 # Define appropriate stop signal for systemd.
 STOPSIGNAL SIGRTMIN+3
 
 # Set default command to systemd init.
 # Note: systemd must run as root (PID 1), but subsequent processes can run as non-root.
 # Docker's init process handles the user switch after systemd starts.
-ENTRYPOINT ["/usr/bin/sudo", "/lib/systemd/systemd"]
+ENTRYPOINT ["/lib/systemd/systemd"]
 CMD ["log-level=info", "log-target=journal-upload"]
 
 # Note: Volumes for /run and /tmp are often automatically handled
