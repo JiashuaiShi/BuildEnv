@@ -1,18 +1,18 @@
 services:
-  shuai-ubuntu:
-    image: shuai/ubuntu:1.0
-    container_name: shuai-ubuntu
+  shuai-ubuntu-init:
+    image: shuai/ubuntu-init:1.0
+    container_name: shuai-ubuntu-init
     labels:
       - "maintainer=shijiashuai"
-      - "description=ubuntu 20.04 base"
-    hostname: shuai-ubuntu
+      - "description=ubuntu base systemd"
+    hostname: shuai-ubuntu-init
     privileged: true
     restart: always
     shm_size: 16g
     ipc: host
     stdin_open: true
     tty: true
-    # user: shijiashuai 去掉，和supervisord启动权限冲突
+    user: shijiashuai
     cap_add:
       - SYS_PTRACE
     security_opt:
@@ -37,5 +37,5 @@ services:
       - LANG=en_US.UTF-8
       - CONDA_DISABLE_PROGRESS_BARS=1
     ports:
-      - "28963:22"
+      - "28964:22"
     working_dir: /data-lush/lush-dev/shijiashuai

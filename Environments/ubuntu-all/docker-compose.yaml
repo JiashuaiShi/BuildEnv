@@ -1,11 +1,11 @@
 services:
-  shuai-dev:
-    image: shuai/dev:latest
-    container_name: shuai-dev
+  shuai-ubuntu-dev:
+    image: shuai/dev:1.0
+    container_name: shuai-ubuntu-dev
     labels:
       - "maintainer=shijiashuai"
-      - "description=统一开发环境(C++/Java/Python)"
-    hostname: shuai-dev
+      - "description=ubuntu dev environment"
+    hostname: shuai-ubuntu-dev
     privileged: true
     restart: always
     shm_size: 16g
@@ -27,17 +27,15 @@ services:
       - /data:/data
       - /data1:/data1
       - /data2:/data2
-      - /data_test:/data_test
       - /mnt/nas1:/mnt/nas1
       - /data_melody:/data_melody
       - /data-melody:/data-melody
       - /lush_test:/lush_test
-      - /lush-test:/lush-test
       - /data-lush:/data-lush
     environment:
       - TERM=xterm-256color
       - LANG=en_US.UTF-8
       - CONDA_DISABLE_PROGRESS_BARS=1
     ports:
-      - "28962:22"  # SSH端口映射
+      - "28962:22"
     working_dir: /data-lush/lush-dev/shijiashuai
