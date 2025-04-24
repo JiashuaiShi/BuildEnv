@@ -113,7 +113,9 @@ exec_in_container() {
     echo "Executing in container ${SERVICE_NAME}: $@"
     # Execute as the user specified in docker-compose.yaml (user: 2034:2000)
     # Use --user to match if needed, or let docker-compose handle it.
-    docker-compose exec ${SERVICE_NAME} bash -c "$@"
+    # docker-compose exec ${SERVICE_NAME} bash -c "$@"
+    # Execute as the dev user 'shijiashuai' by default
+    docker-compose exec --user shijiashuai ${SERVICE_NAME} bash -c "$@"
 }
 
 # 主函数

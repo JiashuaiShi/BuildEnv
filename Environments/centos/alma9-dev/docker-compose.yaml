@@ -43,7 +43,10 @@ services:
     # running the main process (supervisord) as root is fine.
     # If you need the *initial* process to be the user, supervisord
     # would need configuration changes, or don't use supervisord.
-    user: "2034:2000"
+    # user: "2034:2000" # REMOVED: systemd needs to run as root (PID 1)
+    # Add signal for systemd graceful shutdown
+    stop_signal: SIGRTMIN+3
     working_dir: /workspace
     # command: ["zsh"] # REMOVED: Command is now set in Dockerfile CMD to run supervisord
+    # Command is handled by the base image's ENTRYPOINT (systemd)
     
