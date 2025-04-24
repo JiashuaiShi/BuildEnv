@@ -11,7 +11,7 @@ LABEL maintainer="shijiashuai" description="AlmaLinux 9 for C++/Java/Python dev 
 # 安装基础系统组件
 RUN dnf -y update && \
     dnf -y install epel-release && \
-    dnf -y install \
+    dnf -y install --allowerasing \
     sudo \
     wget \
     curl \
@@ -37,6 +37,10 @@ RUN systemctl enable sshd
 #################################################
 # C++开发环境安装部分
 #################################################
+# 启用 CodeReady Builder (CRB) 仓库，它包含很多开发包的依赖
+RUN dnf config-manager --set-enabled crb || \
+    echo "Could not enable CRB repository. Trying to install development tools anyway..."
+
 RUN dnf -y groupinstall "Development Tools" && \
     dnf -y install \
     cmake \

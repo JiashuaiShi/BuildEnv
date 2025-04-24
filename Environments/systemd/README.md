@@ -42,6 +42,8 @@ Navigate to the specific environment directory (`alma9-dev` or `ubuntu-dev`) fir
     ```
     This script uses `docker-compose build` to construct the Docker image based on the `Dockerfile` and `docker-compose.yaml` in the directory. It will also stop and remove any existing container from a previous build.
 
+    *   **Note for `ubuntu-dev`**: Running `./1-build.sh` in the `ubuntu-dev` directory will *first* build (or update) the base image (`shuai/ubuntu-base-systemd:latest`) using the `Dockerfile` located in the `../ubuntu-base` directory, and then proceed to build the `ubuntu-dev` image.
+
 2.  **Manage the Container using the CLI Tool:**
     ```bash
     ./2-dev-cli.sh [command]

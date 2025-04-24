@@ -1,7 +1,14 @@
-FROM ubuntu-base-systemd:latest
+FROM shuai/ubuntu-base-systemd:latest
 
 # 设置镜像元信息
 LABEL maintainer="shijiashuai" description="dev environment systemd"
+
+# --- Build Arguments for User/Group --- #
+ARG USER_NAME=shijiashuai
+ARG USER_UID=1000 # Default UID
+ARG GROUP_NAME=lush-dev
+ARG USER_GID=1000 # Default GID
+ARG USER_PASSWORD=password # Default password
 
 # 避免交互式提示 (已经在 base 设置，保留以防万一)
 ENV DEBIAN_FRONTEND=noninteractive
@@ -26,13 +33,13 @@ RUN apt-get update -o Acquire::Check-Valid-Until=false -o Acquire::Check-Date=fa
     apt-get clean || true
 
 # --- 创建用户和组，并配置 sudo ---
-RUN groupadd --gid 1000 lush-dev || true && \
-    useradd --uid 1000 --gid 1000 --groups sudo --create-home --shell /bin/bash shijiashuai && \
-    # 设置一个默认密码（建议在首次登录时更改）
-    echo "shijiashuai:password" | chpasswd && \
-    # 配置无密码 sudo
-    echo "shijiashuai ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/shijiashuai-nopasswd && \
-    chmod 0440 /etc/sudoers.d/shijiashuai-nopasswd
+RUN groupadd --gid ${USER_GID} ${GROUP_NAME} || echo "Group ${GROUP_NAME} (${USER_GID}) may already exist." && \
+    useradd --uid ${USER_UID} --gid ${USER_GID} --groups sudo --create-home --shell /bin/bash ${USER_NAME} && \
+    # 设置传入的密码
+    echo "${USER_NAME}:${USER_PASSWORD}" | chpasswd && \
+    # 配置无密码 sudo (使用传入的用户名)
+    echo "${USER_NAME} ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/${USER_NAME}-nopasswd && \
+    chmod 0440 /etc/sudoers.d/${USER_NAME}-nopasswd
 
 #################################################
 # C++开发环境安装部分
@@ -74,11 +81,16 @@ RUN apt-get update -o Acquire::Check-Valid-Until=false -o Acquire::Check-Date=fa
     # 其他工具
     valgrind \
     && rm -rf /var/lib/apt/lists/* && \
-    apt-get clean || true
-
-# 设置默认 GCC/G++
-RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-13 100 && \
-    update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-13 100
+    apt-get clean || true && \
+    # 检查 gcc-13 是否安装成功，然后设置 alternatives
+    if [ -f /usr/bin/gcc-13 ]; then \
+        echo "Setting alternatives for gcc-13/g++-13..." && \
+        update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-13 100 && \
+        update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-13 100; \
+    else \
+        echo "WARNING: /usr/bin/gcc-13 not found after install. Skipping update-alternatives for gcc-13."; \
+        # 可选：检查系统默认 gcc 版本\n        echo "Default gcc version:"; gcc --version || echo "gcc not found"; \
+    fi
 
 #################################################
 # Java开发环境安装部分
@@ -173,8 +185,8 @@ RUN chmod +x /usr/local/bin/jdk
 #################################################
 # 用户环境配置 (切换到用户)
 #################################################
-USER shijiashuai
-WORKDIR /home/shijiashuai
+USER ${USER_NAME}
+WORKDIR /home/${USER_NAME}
 
 # 安装 Miniconda
 RUN wget -q -O /tmp/miniconda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh && \
@@ -206,8 +218,8 @@ RUN echo 'alias jdk8="source /usr/local/bin/jdk 8"' >> $HOME/.zshrc && \
     echo 'alias jdk17="source /usr/local/bin/jdk 17"' >> $HOME/.zshrc
 
 # 添加自定义工具到 PATH
-RUN echo 'export PATH="/data-lush/lush-dev/shijiashuai/build-tools/apps:$PATH"' >> $HOME/.bashrc && \
-    echo 'export PATH="/data-lush/lush-dev/shijiashuai/build-tools/apps:$PATH"' >> $HOME/.zshrc
+RUN echo 'export PATH="/data-lush/lush-dev/${USER_NAME}/build-tools/apps:$PATH"' >> $HOME/.bashrc && \
+    echo 'export PATH="/data-lush/lush-dev/${USER_NAME}/build-tools/apps:$PATH"' >> $HOME/.zshrc
 
 # --- Install Python Packages using Conda's pip ---
 RUN $HOME/miniconda/bin/pip install --no-cache-dir matplotlib psrecord || echo "Miniconda pip install failed"
@@ -223,8 +235,8 @@ EXPOSE 22
 EXPOSE 28970
 
 # 设置默认用户和工作目录 (容器启动后生效)
-USER shijiashuai
-WORKDIR /home/shijiashuai
+USER ${USER_NAME}
+WORKDIR /home/${USER_NAME}
 
 # systemd 将由基础镜像的 ENTRYPOINT/CMD 启动
 
@@ -253,3 +265,7 @@ RUN apt-get update -o Acquire::Check-Valid-Until=false -o Acquire::Check-Date=fa
     apt-get install -y --no-install-recommends rustc cargo && \
     rm -rf /var/lib/apt/lists/* && \
     apt-get clean || true
+
+# 最后确保回到目标用户
+USER ${USER_NAME}
+WORKDIR /home/${USER_NAME}

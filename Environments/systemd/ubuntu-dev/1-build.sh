@@ -1,50 +1,72 @@
 #!/bin/bash
 set -e
 
-# 获取脚本所在目录
+# --- Configuration ---
+# Get script's directory
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-cd "$SCRIPT_DIR" # 确保在脚本目录执行
+# Define base image directory relative to this script
+BASE_DIR=$(realpath "$SCRIPT_DIR/../ubuntu-base")
+# Define base image name and tag
+BASE_IMAGE_NAME="shuai/ubuntu-base-systemd"
+BASE_IMAGE_TAG="latest"
+BASE_IMAGE_FULL="${BASE_IMAGE_NAME}:${BASE_IMAGE_TAG}"
 
-# 镜像和服务信息 (从 docker-compose.yaml 读取或保持一致)
-IMAGE_NAME="shuai/ubuntu-dev"
-IMAGE_TAG="1.0"
-IMAGE_FULL="${IMAGE_NAME}:${IMAGE_TAG}"
-CONTAINER_NAME="shuai-ubuntu-dev" # 与 docker-compose.yaml 保持一致
+# Define dev image name/tag (should match docker-compose.yaml)
+DEV_IMAGE_NAME="shuai/ubuntu-dev"
+DEV_IMAGE_TAG="1.0"
+DEV_IMAGE_FULL="${DEV_IMAGE_NAME}:${DEV_IMAGE_TAG}"
+DEV_CONTAINER_NAME="shuai-ubuntu-dev"
 
-# 统一输出标题
-echo "========== Building Ubuntu Development Environment =========="
-echo "Image: ${IMAGE_FULL}"
+# --- Desired User/Group Configuration --- #
+DESIRED_USER_NAME="shijiashuai"
+DESIRED_UID=2034
+DESIRED_GID=2000
+# Optional: Define desired password here if needed, otherwise Dockerfile default is used
+# DESIRED_PASSWORD="new_password"
 
-# 设置环境变量优化构建 (与 alma9-dev 保持一致)
+# --- Build Base Image --- #
+echo "========== Building Base Image: ${BASE_IMAGE_FULL} =========="
+echo "Using Dockerfile from: ${BASE_DIR}"
+# Use docker build directly for the base image
+if docker build -t "${BASE_IMAGE_FULL}" "${BASE_DIR}"; then
+    echo "Base image ${BASE_IMAGE_FULL} built successfully."
+else
+    echo "Failed to build base image ${BASE_IMAGE_FULL}."
+    exit 1
+fi
+echo ""
+
+# --- Build Development Image --- #
+# Change to the dev environment directory for docker-compose
+cd "$SCRIPT_DIR" || exit 1
+
+echo "========== Building Ubuntu Development Environment: ${DEV_IMAGE_FULL} =========="
+echo "Using base image: ${BASE_IMAGE_FULL}"
+
+# Set environment variables for docker-compose build
 export DOCKER_BUILDKIT=1
 export COMPOSE_DOCKER_CLI_BUILD=1
 export DOCKER_DEFAULT_PLATFORM=linux/amd64
 export PYTHONUNBUFFERED=1
 export CONDA_DISABLE_PROGRESS_BARS=1
 
-# 停止并删除旧容器（使用 docker-compose down）
-if docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
-    echo "Stopping and removing existing container defined in docker-compose.yaml..."
+# Stop and remove existing dev container if it exists
+if docker ps -a --format '{{.Names}}' | grep -q "^${DEV_CONTAINER_NAME}$"; then
+    echo "Stopping and removing existing container ${DEV_CONTAINER_NAME}..."
+    # Use docker-compose down in the current directory
     docker-compose down --remove-orphans || echo "'docker-compose down' failed, continuing build..."
 fi
 
-# 移除基础镜像构建步骤
-# echo ">>> 构建基础镜像: ${BASE_IMAGE_FULL}..."
-# docker build -t "${BASE_IMAGE_FULL}" "${BASE_DIR}"
-
-# 开始构建开发镜像 (使用 docker-compose build)
-echo "Starting build process using docker-compose..."
-echo "Note: This may take a while, please be patient..."
-# 传递代理参数 (如果 docker-compose.yaml 中取消注释了 args)
-# export HTTP_PROXY="http://your.proxy.server:port"
-# export HTTPS_PROXY="http://your.proxy.server:port"
-# # 将基础镜像名称传递给开发镜像构建过程 (如果 Dockerfile 中需要)
-# # docker build --build-arg BASE_IMAGE="..."
-if docker-compose build; then
+# Build the dev image using docker-compose
+echo "Starting dev image build process using docker-compose..."
+# Pass the desired UID/GID/etc. as build arguments
+echo "Passing build args: USER_NAME=${DESIRED_USER_NAME}, USER_UID=${DESIRED_UID}, USER_GID=${DESIRED_GID}"
+# Add more --build-arg flags if passing password, etc.
+if docker-compose build --build-arg USER_NAME=${DESIRED_USER_NAME} --build-arg USER_UID=${DESIRED_UID} --build-arg USER_GID=${DESIRED_GID}; then
     echo "========== Build Complete =========="
-    echo "Image ${IMAGE_FULL} built successfully."
-    echo "To start the container, run: ./2-dev-cli.sh start" # 更新提示信息
+    echo "Development image ${DEV_IMAGE_FULL} built successfully."
+    echo "To start the container, run: ./2-dev-cli.sh start"
 else
-    echo "Build failed using docker-compose."
+    echo "Build failed for development image ${DEV_IMAGE_FULL}."
     exit 1
 fi 
