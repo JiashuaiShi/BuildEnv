@@ -4,11 +4,11 @@
 # Usage: ./dev-cli.sh [command]
 
 # Define container and service name based on docker-compose.yaml
-CONTAINER_NAME="jiashuai.alma_9"
-SERVICE_NAME="alma_9"
+CONTAINER_NAME="shuai-alma9-dev"
+SERVICE_NAME="shuai-alma9-dev"
 # Image name is built by docker-compose, not strictly needed here
 # IMAGE_NAME="jiashuai/alma_9" # Example, might vary based on build
-SSH_PORT="28974"
+SSH_PORT="28965"
 # Determine the SSH user based on Dockerfile setup (UID 2034)
 # This requires knowing the username associated with UID 2034 inside the container.
 # Placeholder - needs to be updated with the actual username.
