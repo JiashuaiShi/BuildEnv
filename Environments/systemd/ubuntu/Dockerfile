@@ -1,5 +1,5 @@
 #
-# Systemd Ubuntu Dockerfile
+# Systemd Ubuntu Dockerfile for Development Environment
 #
 # https://github.com/jrei/systemd-docker
 #
@@ -7,17 +7,29 @@
 # Pull base image.
 FROM ubuntu:noble
 
-# Prevent systemd recommendations from overriding installs.
+# Set Non-interactive Frontend
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install systemd.
+# Set Locale
+ENV LANG C.UTF-8
+ENV LC_ALL C.UTF-8
+
+# Install systemd, essential dev tools, and dependencies.
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
        systemd \
        sudo \
        dbus \
+       # Locale and timezone support
+       locales \
+       tzdata \
     && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    # Configure Locale
+    && sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen \
+    && echo 'LANG="en_US.UTF-8"'>/etc/default/locale \
+    && dpkg-reconfigure --frontend=noninteractive locales \
+    && update-locale LANG=en_US.UTF-8
 
 # Mask services that don't make sense in containers or cause issues.
 # https://github.com/systemd/systemd/issues/6237
@@ -31,9 +43,7 @@ RUN systemctl mask \
     # Don't need these in basic containers.
     getty.target \
     console-getty.service \
-    # Prevent automatic restarts on failure, common in containers.
-    # Adjust as needed for your specific service requirements.
-    systemd-logind.service \
+    # systemd-logind is unmasked for better dev environment compatibility
     # Mask services typically handled by Docker or the host.
     systemd-networkd.service \
     systemd-resolved.service \
@@ -42,20 +52,32 @@ RUN systemctl mask \
     # Mask syslog service if journald is preferred or logging is handled externally.
     rsyslog.service
 
-# Unmask the service we want to manage (example: logind if needed for user sessions)
-# RUN systemctl unmask systemd-logind.service # Example, adjust as needed
-
-# Enable dbus service
+# Enable necessary services
 RUN systemctl enable dbus.service
+RUN systemctl enable systemd-logind.service # Enabled for dev env
+
+# Create a non-root user with sudo privileges
+RUN useradd --create-home --shell /bin/bash shijiashuai && \
+    echo "shijiashuai:password" | chpasswd && \
+    adduser shijiashuai sudo
+# Set passwordless sudo for the user (optional, for convenience)
+RUN echo "shijiashuai ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers.d/shijiashuai-nopasswd
+
+# Set default user
+USER shijiashuai
+WORKDIR /home/shijiashuai
 
 # Define appropriate stop signal for systemd.
 STOPSIGNAL SIGRTMIN+3
 
 # Set default command to systemd init.
-ENTRYPOINT ["/lib/systemd/systemd"]
+# Note: systemd must run as root (PID 1), but subsequent processes can run as non-root.
+# Docker's init process handles the user switch after systemd starts.
+ENTRYPOINT ["/usr/bin/sudo", "/lib/systemd/systemd"]
 CMD ["log-level=info", "log-target=journal-upload"]
 
 # Note: Volumes for /run and /tmp are often automatically handled
 # by systemd itself when it boots, marking them as tmpfs.
 # Explicitly defining them might be redundant but can ensure behavior.
-VOLUME [ "/tmp", "/run", "/run/lock" ]
+# /run/lock needs to be writable by systemd (root) initially.
+VOLUME [ "/tmp", "/run" ] # /run/lock is part of /run
