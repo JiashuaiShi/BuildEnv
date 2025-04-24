@@ -166,8 +166,10 @@ RUN mkdir -p /var/run/sshd && \
     systemctl enable ssh
 
 # --- 安装 Netdata ---
-# (如果基础镜像网络受限，下载可能失败)
-RUN bash <(curl -Ss https://my-netdata.io/kickstart.sh) --dont-wait --non-interactive || echo "Netdata installation skipped or failed"
+# 先下载脚本，再用 bash 执行，避免进程替换语法问题
+RUN curl -Ss https://my-netdata.io/kickstart.sh -o /tmp/netdata-kickstart.sh && \
+    bash /tmp/netdata-kickstart.sh --dont-wait --non-interactive || echo "Netdata installation skipped or failed" && \
+    rm -f /tmp/netdata-kickstart.sh
 # 启用 Netdata 服务 (如果安装成功)
 RUN if [ -f /etc/systemd/system/netdata.service ]; then systemctl enable netdata; fi
 
@@ -200,7 +202,6 @@ RUN wget -q -O /tmp/miniconda.sh https://repo.anaconda.com/miniconda/Miniconda3-
     $HOME/miniconda/bin/conda config --set ssl_verify false && \
     $HOME/miniconda/bin/conda config --set remote_read_timeout_secs 600 && \
     $HOME/miniconda/bin/conda config --set remote_connect_timeout_secs 60 && \
-    $HOME/miniconda/bin/conda config --set concurrent_download_threads 1 && \
     $HOME/miniconda/bin/conda config --set remote_max_retries 10
 
 # 安装oh-my-zsh和插件
