@@ -1,0 +1,41 @@
+services:
+  shuai-ubuntu-dev:
+    image: shuai/ubuntu-dev:1.0
+    container_name: shuai-ubuntu-dev
+    labels:
+      - "maintainer=shijiashuai"
+      - "description=ubuntu base systemd"
+    hostname: shuai-ubuntu-dev
+    privileged: true
+    restart: always
+    shm_size: 16g
+    ipc: host
+    stdin_open: true
+    tty: true
+    user: shijiashuai
+    cap_add:
+      - SYS_PTRACE
+    security_opt:
+      - seccomp=unconfined
+    build:
+      context: .
+      dockerfile: Dockerfile
+      # args:
+      #   - http_proxy=http://172.19.11.241:443
+      #   - https_proxy=http://172.19.11.241:443
+    volumes:
+      - /data:/data
+      - /data1:/data1
+      - /data2:/data2
+      - /mnt/nas1:/mnt/nas1
+      - /data_melody:/data_melody
+      - /data-melody:/data-melody
+      - /lush_test:/lush_test
+      - /data-lush:/data-lush
+    environment:
+      - TERM=xterm-256color
+      - LANG=en_US.UTF-8
+      - CONDA_DISABLE_PROGRESS_BARS=1
+    ports:
+      - "28964:22"
+    working_dir: /data-lush/lush-dev/shijiashuai
