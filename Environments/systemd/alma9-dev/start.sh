@@ -2,54 +2,49 @@
 
 echo "Starting AlmaLinux 9 Unified Development Environment..."
 
-# Define image and container names based on docker-compose.yaml
-# Assuming image name follows pattern <username>/<service_name>:<tag>
-# Or inferred by docker-compose build.
-# Let's rely on docker-compose to find the correct image.
-CONTAINER_NAME="jiashuai.alma_9"
-SERVICE_NAME="alma_9"
-SSH_PORT="28974"
-USER_ID="2034"
-GROUP_ID="2000"
+# 容器信息
+CONTAINER_NAME="shuai-alma-dev"
+SSH_PORT="28965"
+SSH_USER="shijiashuai"
+SSH_PASSWORD="phoenix2024"
 
-# Check if the container is already running using the service name
-if docker-compose ps -q ${SERVICE_NAME} &>/dev/null; then
-  if [ "$(docker-compose ps -q ${SERVICE_NAME} | xargs docker inspect -f '{{.State.Status}}')" == "running" ]; then
-    echo "Container is already running."
-    # Optionally show connection info again or just exit
-  fi
+# 检查容器是否已构建
+if ! docker images | grep -q "shuai/alma-dev:1.0"; then
+    echo "Error: Container image not found. Please run ./build.sh first"
+    exit 1
 fi
 
 # 启动容器
-echo "Attempting to start container via docker-compose..."
-if docker-compose up -d ${SERVICE_NAME}; then
-    echo "Waiting for services inside the container (like SSH)..."
-    sleep 5 # Increased sleep time slightly
-
-    # Check container status again
-    if [ "$(docker-compose ps -q ${SERVICE_NAME} | xargs docker inspect -f '{{.State.Status}}')" != "running" ]; then
-      echo "Container failed to start or stay running. Check logs with:"
-      echo "  docker-compose logs ${SERVICE_NAME}"
-      echo "  Or ./dev-cli.sh logs"
-      exit 1
-    fi
+if docker-compose up -d; then
+    echo "Waiting for SSH service..."
+    sleep 5
 
     echo "Container started successfully. SSH connection info:"
     echo "  Host: localhost"
     echo "  Port: ${SSH_PORT}"
-    echo "  User: Defined in Dockerfile (UID ${USER_ID}, GID ${GROUP_ID})"
-    echo "  Password: (Set within Dockerfile/container setup if applicable)"
+    echo "  User: ${SSH_USER}"
+    echo "  Password: ${SSH_PASSWORD}"
     echo ""
-    echo "Connect example: ssh -p ${SSH_PORT} <username>@localhost"
-    # Replace <username> with the actual username configured for UID 2034 inside the container
+    echo "Connect using: ssh -p ${SSH_PORT} ${SSH_USER}@localhost"
     echo ""
-    echo "Use './dev-cli.sh ssh' for easier connection if configured."
-
+    echo "Or use the dev-cli tool:"
+    echo "./dev-cli.sh ssh"
+    echo ""
+    echo "JDK version management:"
+    echo "  Switch to JDK 8: jdk8"
+    echo "  Switch to JDK 11: jdk11"
+    echo "  Switch to JDK 17: jdk17"
+    echo "  Check current version: jdk"
 else
-    echo "Failed to execute docker-compose up."
-    echo "Check docker-compose logs ${SERVICE_NAME} for errors."
+    echo "Failed to start container"
     exit 1
 fi
 
-# Removed environment specific feature list (JDK, C++, etc.)
-# Add relevant info for alma-all environment if needed. 
+echo "开发环境功能:"
+echo "  1. C++开发: GCC, Clang, CMake, Ninja, GDB, Valgrind 等"
+echo "  2. Java开发: 支持JDK 8/11/17"
+echo "  3. Python开发: Python 3 + pip"
+echo ""
+echo "特殊命令:"
+echo "  * JDK版本切换: jdk8, jdk11, jdk17"
+echo "  * 查看当前JDK版本: jdk"

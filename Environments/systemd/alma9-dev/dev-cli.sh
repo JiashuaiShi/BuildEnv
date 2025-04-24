@@ -3,15 +3,10 @@
 # AlmaLinux 9 Unified Development Environment Management Tool
 # Usage: ./dev-cli.sh [command]
 
-# Define container and service name based on docker-compose.yaml
-CONTAINER_NAME="shuai-alma9-dev"
-SERVICE_NAME="shuai-alma9-dev"
-# Image name is built by docker-compose, not strictly needed here
-# IMAGE_NAME="jiashuai/alma_9" # Example, might vary based on build
+# 容器信息
+CONTAINER_NAME="shuai-alma-dev"
+IMAGE_NAME="shuai/alma-dev:1.0"
 SSH_PORT="28965"
-# Determine the SSH user based on Dockerfile setup (UID 2034)
-# This requires knowing the username associated with UID 2034 inside the container.
-# Placeholder - needs to be updated with the actual username.
 SSH_USER="shijiashuai"
 
 # 显示帮助信息
@@ -45,77 +40,65 @@ start_container() {
     ./start.sh
 }
 
-# 停止容器 (Uses docker-compose)
+# 停止容器
 stop_container() {
-    echo "Stopping container ${SERVICE_NAME}..."
-    docker-compose stop ${SERVICE_NAME}
+    echo "Stopping container..."
+    docker stop $CONTAINER_NAME
 }
 
-# 停止并删除容器 (Uses docker-compose)
+# 停止并删除容器
 down_container() {
-    echo "Stopping and removing container ${SERVICE_NAME}..."
+    echo "Stopping and removing container..."
     docker-compose down
 }
 
-# 重启容器 (Uses docker-compose)
+# 重启容器
 restart_container() {
-    echo "Restarting container ${SERVICE_NAME}..."
-    docker-compose restart ${SERVICE_NAME}
-    echo "Waiting a few seconds for services..."
-    sleep 3
-    echo "Container restarted. Use './dev-cli.sh ssh' to connect."
+    echo "重启容器..."
+    docker restart $CONTAINER_NAME
+
+    echo "等待SSH服务就绪..."
+    sleep 2
+    echo "容器已重启，可以使用 ./dev-cli.sh ssh 连接"
 }
 
 # SSH连接到容器
 ssh_to_container() {
-    echo "Connecting to container ${CONTAINER_NAME} via SSH..."
-    echo "Attempting: ssh -p ${SSH_PORT} ${SSH_USER}@localhost"
-    echo "Note: Ensure the SSH user '${SSH_USER}' exists and SSH is configured in the container."
-    ssh -p ${SSH_PORT} ${SSH_USER}@localhost
+    echo "连接到容器..."
+    ssh -p $SSH_PORT $SSH_USER@localhost
 }
 
-# 显示容器状态 (Uses docker-compose)
+# 显示容器状态
 show_status() {
-    echo "Container status for service ${SERVICE_NAME}:"
-    docker-compose ps
+    echo "容器状态:"
+    docker ps -a | grep $CONTAINER_NAME
 }
 
-# 显示容器日志 (Uses docker-compose)
+# 显示容器日志
 show_logs() {
-    echo "Showing logs for container ${SERVICE_NAME}:"
-    docker-compose logs --follow ${SERVICE_NAME}
+    echo "容器日志:"
+    docker logs $CONTAINER_NAME
 }
 
 # 清理容器和镜像
 clean_container() {
-    echo "Cleaning up container ${SERVICE_NAME}..."
-    # Use docker-compose down to stop and remove container/network
-    docker-compose down --remove-orphans
-    echo "Container stopped and removed."
-    # Optionally add image removal, but be careful
-    # read -p "Do you also want to remove the Docker image? (y/N): " confirm
-    # if [[ "$confirm" == [yY] || "$confirm" == [yY][eE][sS] ]]; then
-    #     echo "Removing image... (Image name might need adjustment)"
-    #     # docker rmi $(docker images -q ${IMAGE_NAME}) 2>/dev/null || echo "Image removal failed or image not found."
-    #     echo "Image removal should be done manually if needed via 'docker rmi <image_id_or_tag>'."
-    # fi
-    echo "Cleanup finished."
+    echo "清理容器和镜像..."
+    docker stop $CONTAINER_NAME 2>/dev/null || true
+    docker rm $CONTAINER_NAME 2>/dev/null || true
+    docker rmi $IMAGE_NAME 2>/dev/null || true
+    echo "清理完成"
 }
 
-# 在容器中执行命令 (Uses docker-compose exec)
+# 在容器中执行命令
 exec_in_container() {
-    shift # Remove the 'exec' argument itself
-    if [ -z "$1" ]; then
-        echo "Error: No command specified to execute."
-        echo "Usage: ./dev-cli.sh exec \"<command>\""
+    if [ -z "$2" ]; then
+        echo "错误: 需要指定要执行的命令"
+        echo "用法: ./dev-cli.sh exec \"<命令>\""
         exit 1
     fi
-    echo "Executing in container ${SERVICE_NAME}: $@"
-    # Execute as the user specified in docker-compose.yaml (user: 2034:2000)
-    # Use --user to match if needed, or let docker-compose handle it.
-    # docker-compose exec ${SERVICE_NAME} bash -c "$@"
-    # Execute as the dev user 'shijiashuai' by default
-    docker-compose exec --user shijiashuai ${SERVICE_NAME} bash -c "$@"
+
+    echo "在容器中执行: $2"
+    docker exec -it $CONTAINER_NAME bash -c "$2"
 }
 
 # 主函数
@@ -168,4 +151,4 @@ if ! command -v docker-compose &> /dev/null; then
     exit 1
 fi
 
-main "$@" 
+main "$@"
