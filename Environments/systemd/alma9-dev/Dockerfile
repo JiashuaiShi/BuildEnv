@@ -20,16 +20,25 @@ RUN dnf -y update && \
     openssh-server \
     && dnf clean all
 
-# 设置 SSH 和用户信息
+# 设置 SSH 配置
 # ssh-keygen -A is handled by sshd.service
-RUN echo 'root:0306' | chpasswd && \
-    sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config && \
-    sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config && \
-    groupadd -g 2000 lush-dev && \
-    useradd -m -d /home/shijiashuai -s /bin/zsh -u 2034 -g lush-dev shijiashuai && \
-    echo 'shijiashuai:phoenix2024' | chpasswd && \
-    echo '%lush-dev ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers && \
-    mkdir -p /workspace && chown -R shijiashuai:lush-dev /workspace
+RUN sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config && \
+    sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config
+
+# 创建用户和组 (UID 和 GID 将通过 docker-compose.yaml 的 ARG 传入)
+ARG USER_NAME=shijiashuai
+ARG USER_ID=2034
+ARG GROUP_NAME=lush-dev
+ARG GROUP_ID=2000
+ARG USER_PASSWORD=phoenix2024
+ARG ROOT_PASSWORD=phoenix2024
+
+RUN echo "root:${ROOT_PASSWORD}" | chpasswd && \
+    groupadd -g ${GROUP_ID} ${GROUP_NAME} && \
+    useradd -m -d /home/${USER_NAME} -s /bin/zsh -u ${USER_ID} -g ${GROUP_NAME} ${USER_NAME} && \
+    echo "${USER_NAME}:${USER_PASSWORD}" | chpasswd && \
+    echo "%${GROUP_NAME} ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers && \
+    mkdir -p /workspace && chown -R ${USER_NAME}:${GROUP_NAME} /workspace
 
 # 使用 systemd 启用 sshd 服务
 RUN systemctl enable sshd
@@ -114,8 +123,9 @@ RUN dnf -y install \
 #################################################
 # 用户环境配置 (切换到用户)
 #################################################
-USER shijiashuai
-WORKDIR /home/shijiashuai
+ARG USER_NAME=shijiashuai
+USER ${USER_NAME}
+WORKDIR /home/${USER_NAME}
 
 # 安装 oh-my-zsh
 RUN git clone https://github.com/ohmyzsh/ohmyzsh.git .oh-my-zsh && \
@@ -129,8 +139,8 @@ RUN git clone https://github.com/ohmyzsh/ohmyzsh.git .oh-my-zsh && \
 # 添加 JDK 切换别名到 .bashrc 和 .zshrc
 RUN echo 'alias jdk8="source /usr/local/bin/jdk 8"' >> $HOME/.bashrc && \
     echo 'alias jdk11="source /usr/local/bin/jdk 11"' >> $HOME/.bashrc && \
-    echo 'alias jdk17="source /usr/local/bin/jdk 17"' >> $HOME/.bashrc
-RUN echo 'alias jdk8="source /usr/local/bin/jdk 8"' >> $HOME/.zshrc && \
+    echo 'alias jdk17="source /usr/local/bin/jdk 17"' >> $HOME/.bashrc && \
+    echo 'alias jdk8="source /usr/local/bin/jdk 8"' >> $HOME/.zshrc && \
     echo 'alias jdk11="source /usr/local/bin/jdk 11"' >> $HOME/.zshrc && \
     echo 'alias jdk17="source /usr/local/bin/jdk 17"' >> $HOME/.zshrc
 
@@ -145,8 +155,10 @@ WORKDIR /
 # 开放 SSH 端口
 EXPOSE 22
 
-# 设置 VOLUME
-VOLUME ["/workspace", "/data", "/data1"]
-
 # 容器启动命令由基础镜像的 systemd 入口点处理
 # CMD instruction removed to use base image's default ENTRYPOINT (/usr/sbin/init)
+
+# 设置默认用户和工作目录 (容器启动后生效)
+ARG USER_NAME=shijiashuai
+USER ${USER_NAME}
+WORKDIR /home/${USER_NAME}

@@ -5,9 +5,9 @@ LABEL maintainer="shijiashuai" description="dev environment systemd"
 
 # --- Build Arguments for User/Group --- #
 ARG USER_NAME=shijiashuai
-ARG USER_UID=1000 # Default UID
+ARG USER_UID=2034 # Default UID
 ARG GROUP_NAME=lush-dev
-ARG USER_GID=1000 # Default GID
+ARG USER_GID=2000 # Default GID
 ARG USER_PASSWORD=password # Default password
 
 # 避免交互式提示 (已经在 base 设置，保留以防万一)
@@ -219,8 +219,8 @@ RUN echo 'alias jdk8="source /usr/local/bin/jdk 8"' >> $HOME/.zshrc && \
     echo 'alias jdk17="source /usr/local/bin/jdk 17"' >> $HOME/.zshrc
 
 # 添加自定义工具到 PATH
-RUN echo 'export PATH="/data-lush/lush-dev/${USER_NAME}/build-tools/apps:$PATH"' >> $HOME/.bashrc && \
-    echo 'export PATH="/data-lush/lush-dev/${USER_NAME}/build-tools/apps:$PATH"' >> $HOME/.zshrc
+RUN echo "export PATH=\\"/data-lush/lush-dev/\${USER_NAME}/build-tools/apps:\$PATH\\"" >> $HOME/.bashrc && \\
+    echo "export PATH=\\"/data-lush/lush-dev/\${USER_NAME}/build-tools/apps:\$PATH\\"" >> $HOME/.zshrc
 
 # --- Install Python Packages using Conda's pip ---
 RUN $HOME/miniconda/bin/pip install --no-cache-dir matplotlib psrecord || echo "Miniconda pip install failed"

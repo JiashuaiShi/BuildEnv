@@ -20,9 +20,16 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      # args:
-      #   - http_proxy=http://172.19.11.241:443
-      #   - https_proxy=http://172.19.11.241:443
+      args:
+        # 用户配置
+        - USER_NAME=shijiashuai
+        - USER_ID=2034
+        - GROUP_NAME=lush-dev
+        - GROUP_ID=2000
+        - USER_PASSWORD=phoenix2024
+        - ROOT_PASSWORD=phoenix2024
+        #   - http_proxy=${HTTP_PROXY}
+        #   - https_proxy=${HTTPS_PROXY}
     volumes:
       - /data:/data
       - /data1:/data1

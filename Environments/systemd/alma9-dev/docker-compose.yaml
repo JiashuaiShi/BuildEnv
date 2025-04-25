@@ -1,6 +1,6 @@
 services:
   shuai-alma-dev:
-    image: shuai/alma9-dev:1.0
+    image: shuai/alma-dev:1.0
     container_name: shuai-alma-dev
     labels:
       - "maintainer=shijiashuai"
@@ -20,9 +20,17 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      # args:
-      #   - http_proxy=${HTTP_PROXY}
-      #   - https_proxy=${HTTPS_PROXY}
+
+      args:
+        # 用户配置
+        - USER_NAME=shijiashuai
+        - USER_ID=2034
+        - GROUP_NAME=lush-dev
+        - GROUP_ID=2000
+        - USER_PASSWORD=phoenix2024
+        - ROOT_PASSWORD=phoenix2024
+        #   - http_proxy=${HTTP_PROXY}
+        #   - https_proxy=${HTTPS_PROXY}
     volumes:
       - /data:/data
       - /data1:/data1
