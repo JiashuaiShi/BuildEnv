@@ -21,13 +21,13 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        # 用户配置
+        # 用户配置 (统一为 ID/ID)
         - USER_NAME=shijiashuai
-        - USER_ID=2034
+        - USER_ID=2034 # Changed from USER_UID
         - GROUP_NAME=lush-dev
-        - GROUP_ID=2000
+        - GROUP_ID=2000 # Changed from USER_GID
         - USER_PASSWORD=phoenix2024
-        - ROOT_PASSWORD=phoenix2024
+        - ROOT_PASSWORD=phoenix2024 # 新增
         #   - http_proxy=${HTTP_PROXY}
         #   - https_proxy=${HTTPS_PROXY}
     volumes:
