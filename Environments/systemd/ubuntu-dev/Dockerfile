@@ -213,9 +213,9 @@ RUN echo 'alias jdk8="source /usr/local/bin/jdk 8"' >> $HOME/.zshrc && \
     echo 'alias jdk11="source /usr/local/bin/jdk 11"' >> $HOME/.zshrc && \
     echo 'alias jdk17="source /usr/local/bin/jdk 17"' >> $HOME/.zshrc
 
-# 添加自定义工具到 PATH (修复反斜杠问题)
-RUN echo "export PATH=\"\"/data-lush/lush-dev/\${USER_NAME}/build-tools/apps:\$PATH\"\"" >> $HOME/.bashrc && \\
-    echo "export PATH=\"\"/data-lush/lush-dev/\${USER_NAME}/build-tools/apps:\$PATH\"\"" >> $HOME/.zshrc
+# 添加自定义工具到 PATH
+RUN echo "export PATH=\"/data-lush/lush-dev/${USER_NAME}/build-tools/apps:$PATH\"" >> $HOME/.bashrc && \
+    echo "export PATH=\"/data-lush/lush-dev/${USER_NAME}/build-tools/apps:$PATH\"" >> $HOME/.zshrc
 
 # --- Install Python Packages using Conda's pip ---
 RUN $HOME/miniconda/bin/pip install --no-cache-dir matplotlib psrecord || echo "Miniconda pip install failed"
