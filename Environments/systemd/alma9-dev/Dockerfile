@@ -5,17 +5,18 @@ FROM almalinux/9-init:9.5-20250411
 LABEL maintainer="shijiashuai" description="Refined AlmaLinux 9 dev environment with systemd"
 
 # --- 系统基础设置 ---
-# 更新系统并安装基础工具和依赖
+# 更新系统并安装 epel-release
 RUN dnf -y update && \
-    dnf -y install \
+    dnf -y install epel-release && \
+    # 启用 CRB (CodeReady Builder) 源，EPEL 可能需要其中的包
+    dnf config-manager --set-enabled crb && \
+    dnf clean all
+
+# 安装基础工具和依赖 (包括来自 EPEL 的)
+RUN dnf -y install \
     sudo \
     dnf-utils \
-    epel-release \
-    ca-certificates \
-    gnupg2 \
-    wget \
-    curl \
-    tar \
+    # ca-certificates, gnupg2, wget, curl, tar, etc. 已经作为基础镜像或 epel-release 依赖安装
     gzip \
     bzip2 \
     xz \
