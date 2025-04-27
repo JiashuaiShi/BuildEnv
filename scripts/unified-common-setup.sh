@@ -1,6 +1,9 @@
 #!/bin/bash
 set -e # Exit immediately if a command exits with a non-zero status.
 
+# --- WARNING: Hardcoded Credentials --- #
+# Using hardcoded passwords in scripts is a security risk.
+# Consider using Docker build arguments (ARG) or secrets management instead.
 # --- Configuration (Hardcoded for now, consider using ARGs) ---
 SETUP_USER_NAME="shijiashuai"
 SETUP_USER_ID="2034"

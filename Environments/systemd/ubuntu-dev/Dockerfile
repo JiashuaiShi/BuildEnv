@@ -6,49 +6,34 @@ LABEL maintainer="shijiashuai" description="Ubuntu dev environment with systemd"
 # ARG for setup mode
 ARG SETUP_MODE=systemd
 
-# --- Build Arguments for User/Group (统一为 ID/ID) --- #
-ARG USER_NAME=shijiashuai
-ARG USER_ID=2034 # Default ID (was USER_UID)
-ARG GROUP_NAME=lush-dev
-ARG GROUP_ID=2000 # Default GID (was USER_GID)
-ARG USER_PASSWORD=password # Default user password
-ARG ROOT_PASSWORD=password # Default root password (新增)
+# --- Build Arguments for User/Group (These are now handled by the script if hardcoded there, or should be passed to script if script uses ARGs) --- #
+# ARG USER_NAME=shijiashuai
+# ARG USER_ID=2034
+# ARG GROUP_NAME=lush-dev
+# ARG GROUP_ID=2000
+# ARG USER_PASSWORD=password
+# ARG ROOT_PASSWORD=password
 
 # 避免交互式提示
 ENV DEBIAN_FRONTEND=noninteractive
 
-# --- 安装开发环境所需的基础组件 ---
-RUN apt-get update -o Acquire::Check-Valid-Until=false -o Acquire::Check-Date=false || true && \
-    apt-get install -y --no-install-recommends \
-    sudo \
-    ca-certificates \
-    gnupg \
-    wget \
-    gpg \
-    curl \
-    apt-transport-https \
-    software-properties-common \
-    && rm -rf /var/lib/apt/lists/* && \
-    apt-get clean || true
+# --- Unified Setup Script Handles Base Packages, User/Group, Sudo --- #
+# REMOVED redundant package installs and user setup here
 
-# --- 创建用户和组，并配置 sudo 和密码 (统一逻辑) ---
-RUN groupadd --gid ${GROUP_ID} ${GROUP_NAME} || echo "Group ${GROUP_NAME} (${GROUP_ID}) may already exist." && \
-    # 添加 -m 来创建家目录
-    useradd --uid ${USER_ID} --gid ${GROUP_ID} --groups sudo -m --shell /bin/bash ${USER_NAME} && \
-    # 设置用户密码
-    echo "${USER_NAME}:${USER_PASSWORD}" | chpasswd && \
-    # 设置 root 密码 (新增)
-    echo "root:${ROOT_PASSWORD}" | chpasswd && \
-    # 配置无密码 sudo (使用 /etc/sudoers.d/)
-    echo "${USER_NAME} ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/${USER_NAME}-nopasswd && \
-    chmod 0440 /etc/sudoers.d/${USER_NAME}-nopasswd
-
-# --- Run Unified Common User Setup Script ---
+# --- Run Unified Common User Setup Script --- #
 COPY scripts/unified-common-setup.sh /tmp/
 RUN chmod +x /tmp/unified-common-setup.sh && \
     export SETUP_MODE=${SETUP_MODE} && \
     /tmp/unified-common-setup.sh && \
     rm /tmp/unified-common-setup.sh
+
+# --- SSH Configuration (Systemd Specific) --- #
+# unified-common-setup.sh skips config for systemd mode
+# Apply necessary SSH config for systemd environment
+RUN sed -i 's/^#?PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config && \
+    sed -i 's/^#?PermitRootLogin.*/PermitRootLogin no/' /etc/ssh/sshd_config && \
+    # 确保 ssh 服务已启用 (基础镜像可能已做)
+    systemctl enable ssh
 
 #################################################
 # C++开发环境安装部分
@@ -158,15 +143,6 @@ RUN apt-get update -o Acquire::Check-Valid-Until=false -o Acquire::Check-Date=fa
     rustc cargo \
     && rm -rf /var/lib/apt/lists/* && \
     apt-get clean || true
-
-# 配置 SSH (统一逻辑)
-RUN mkdir -p /var/run/sshd && \
-    # 允许 root 登录
-    sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config && \
-    # 允许密码认证
-    sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config && \
-    # 启用 SSH 服务
-    systemctl enable ssh
 
 # --- 安装 Netdata ---
 RUN curl -Ss https://my-netdata.io/kickstart.sh -o /tmp/netdata-kickstart.sh && \
