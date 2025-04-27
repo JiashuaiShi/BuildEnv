@@ -1,28 +1,19 @@
 services:
   shuai-ubuntu-dev:
-    image: shuai/dev:1.0
+    image: shuai/ubuntu-dev:1.0
     container_name: shuai-ubuntu-dev
     labels:
       - "maintainer=shijiashuai"
-      - "description=ubuntu dev environment"
+      - "description=ubuntu dev environment (supervisord)"
     hostname: shuai-ubuntu-dev
-    privileged: true
     restart: always
     shm_size: 16g
     ipc: host
     stdin_open: true
     tty: true
-    # user: shijiashuai 去掉，和supervisord启动权限冲突
-    cap_add:
-      - SYS_PTRACE
-    security_opt:
-      - seccomp=unconfined
     build:
       context: .
       dockerfile: Dockerfile
-      # args:
-      #   - http_proxy=http://172.19.11.241:443
-      #   - https_proxy=http://172.19.11.241:443
     volumes:
       - /data:/data
       - /data1:/data1

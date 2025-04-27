@@ -44,11 +44,11 @@ RUN apt-get update -o Acquire::Check-Valid-Until=false -o Acquire::Check-Date=fa
     && rm -rf /var/lib/apt/lists/* && \
     apt-get clean || true
 
-# --- Run Common User Setup Script ---
-COPY scripts/common-user-setup.sh /tmp/
-RUN chmod +x /tmp/common-user-setup.sh && \
-    /tmp/common-user-setup.sh && \
-    rm /tmp/common-user-setup.sh
+# --- Run Unified Common User Setup Script ---
+COPY scripts/unified-common-setup.sh /tmp/
+RUN chmod +x /tmp/unified-common-setup.sh && \
+    /tmp/unified-common-setup.sh && \
+    rm /tmp/unified-common-setup.sh
 
 #################################################
 # C++开发环境安装部分
@@ -318,3 +318,43 @@ ENTRYPOINT ["/usr/bin/supervisord", "-n", "-c", "/etc/supervisor/conf.d/supervis
 # 注意：不在这里切换用户，让 supervisord 以 root 运行
 # 默认工作目录设置（影响进入容器时的默认目录）
 WORKDIR /home/shijiashuai
+
+#################################################
+# Miniconda (用户级)
+#################################################
+# 切换到普通用户进行安装
+USER shijiashuai
+WORKDIR /home/shijiashuai
+
+# 下载并安装 Miniconda
+RUN wget -q -O /tmp/miniconda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh && \
+    chmod +x /tmp/miniconda.sh && \
+    # 使用 -b 批处理模式, -p 指定安装路径
+    bash /tmp/miniconda.sh -b -p $HOME/miniconda && \
+    rm -f /tmp/miniconda.sh && \
+    # 初始化 conda (bash 和 zsh - 假设 zsh 也已安装)
+    $HOME/miniconda/bin/conda init bash && \
+    $HOME/miniconda/bin/conda init zsh && \
+    # 配置 conda (常用设置)
+    $HOME/miniconda/bin/conda config --set always_yes yes && \
+    $HOME/miniconda/bin/conda config --set auto_activate_base false && \
+    $HOME/miniconda/bin/conda config --set ssl_verify false && \
+    $HOME/miniconda/bin/conda config --set remote_read_timeout_secs 600 && \
+    $HOME/miniconda/bin/conda config --set remote_connect_timeout_secs 60 && \
+    $HOME/miniconda/bin/conda config --set remote_max_retries 10
+
+# 安装用户指定的 Python 包 (可选)
+# RUN $HOME/miniconda/bin/pip install --no-cache-dir matplotlib psrecord
+
+# 切换回 root 以便设置 CMD
+USER root
+
+#################################################
+# 容器启动配置
+#################################################
+
+# 暴露 SSH 端口
+EXPOSE 22
+
+# 启动 supervisord
+CMD ["/usr/bin/supervisord", "-n", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
