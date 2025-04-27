@@ -4,11 +4,15 @@ FROM almalinux:9
 # 设置镜像元信息
 LABEL maintainer="shijiashuai" description="Refined AlmaLinux 9 dev environment (Supervisord)"
 
+# ARG for setup mode
+ARG SETUP_MODE=supervisord
+
 # --- Run Unified Common User Setup Script ---
 # 这个脚本会处理: 安装基础工具 (sudo, zsh, sshd, supervisor, etc.),
 # 创建用户/组, 配置SSH和sudo, 创建基础目录
 COPY scripts/unified-common-setup.sh /tmp/
 RUN chmod +x /tmp/unified-common-setup.sh && \
+    export SETUP_MODE=${SETUP_MODE} && \
     /tmp/unified-common-setup.sh && \
     rm /tmp/unified-common-setup.sh
 

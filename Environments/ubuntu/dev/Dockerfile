@@ -4,6 +4,9 @@ FROM ubuntu:24.04
 # 设置镜像元信息
 LABEL maintainer="shijiashuai" description="统一开发环境 - C++/Java多版本"
 
+# ARG for setup mode
+ARG SETUP_MODE=supervisord
+
 # 接收构建参数
 
 # 在构建时设置代理环境变量
@@ -47,6 +50,7 @@ RUN apt-get update -o Acquire::Check-Valid-Until=false -o Acquire::Check-Date=fa
 # --- Run Unified Common User Setup Script ---
 COPY scripts/unified-common-setup.sh /tmp/
 RUN chmod +x /tmp/unified-common-setup.sh && \
+    export SETUP_MODE=${SETUP_MODE} && \
     /tmp/unified-common-setup.sh && \
     rm /tmp/unified-common-setup.sh
 

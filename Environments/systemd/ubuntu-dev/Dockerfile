@@ -3,6 +3,9 @@ FROM shuai/ubuntu-base-systemd:latest
 # 设置镜像元信息
 LABEL maintainer="shijiashuai" description="Ubuntu dev environment with systemd"
 
+# ARG for setup mode
+ARG SETUP_MODE=systemd
+
 # --- Build Arguments for User/Group (统一为 ID/ID) --- #
 ARG USER_NAME=shijiashuai
 ARG USER_ID=2034 # Default ID (was USER_UID)
@@ -39,6 +42,13 @@ RUN groupadd --gid ${GROUP_ID} ${GROUP_NAME} || echo "Group ${GROUP_NAME} (${GRO
     # 配置无密码 sudo (使用 /etc/sudoers.d/)
     echo "${USER_NAME} ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/${USER_NAME}-nopasswd && \
     chmod 0440 /etc/sudoers.d/${USER_NAME}-nopasswd
+
+# --- Run Unified Common User Setup Script ---
+COPY scripts/unified-common-setup.sh /tmp/
+RUN chmod +x /tmp/unified-common-setup.sh && \
+    export SETUP_MODE=${SETUP_MODE} && \
+    /tmp/unified-common-setup.sh && \
+    rm /tmp/unified-common-setup.sh
 
 #################################################
 # C++开发环境安装部分

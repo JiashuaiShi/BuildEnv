@@ -9,6 +9,11 @@ SETUP_GROUP_ID="2000"
 SETUP_USER_PASSWORD="phoenix2024"
 SETUP_LOCALE="en_US.UTF-8"
 
+# SETUP_MODE: supervisord (default) or systemd
+# Controls whether supervisor is installed/configured and detailed SSH config is done.
+# Passed as env var during script execution in Dockerfile RUN step.
+SETUP_MODE=${SETUP_MODE:-supervisord} # Default to supervisord if not set
+
 # --- OS Detection ---
 OS_ID=""
 if [ -f /etc/os-release ]; then
@@ -19,25 +24,30 @@ else
 fi
 
 echo "Detected OS: ${OS_ID}"
+echo "Setup Mode: ${SETUP_MODE}"
 
 # --- Package Management & Basic Tooling ---
 echo "Installing base packages..."
 if [ "$OS_ID" == "ubuntu" ] || [ "$OS_ID" == "debian" ]; then
     export DEBIAN_FRONTEND=noninteractive
     apt-get update -o Acquire::Check-Valid-Until=false -o Acquire::Check-Date=false || true
-    # Install supervisor from apt
+    # Base packages needed for both modes
     apt-get install -y --no-install-recommends --allow-unauthenticated \
         sudo \
         locales \
         zsh \
         openssh-server \
-        supervisor \
         ca-certificates \
         wget \
         curl \
         gnupg \
         gpg \
-        git # Ensure git is installed
+        git
+    # Install supervisor only if needed
+    if [ "$SETUP_MODE" == "supervisord" ]; then
+        echo "Installing supervisor for supervisord mode..."
+        apt-get install -y --no-install-recommends --allow-unauthenticated supervisor
+    fi
     apt-get clean || true
     rm -rf /var/lib/apt/lists/*
 
@@ -48,28 +58,31 @@ if [ "$OS_ID" == "ubuntu" ] || [ "$OS_ID" == "debian" ]; then
 
 elif [ "$OS_ID" == "almalinux" ] || [ "$OS_ID" == "centos" ] || [ "$OS_ID" == "rhel" ] || [ "$OS_ID" == "fedora" ]; then
     dnf -y update || true
-    # Enable EPEL for supervisor if not CentOS Stream/Fedora
-    if [[ "$OS_ID" == "almalinux" || "$OS_ID" == "centos" || "$OS_ID" == "rhel" ]]; then
-       dnf -y install epel-release || true # May already be present
-    fi
-    # Install supervisor from dnf/epel
+    # Install base packages needed for both modes
     dnf -y install \
         sudo \
         zsh \
         openssh-server \
-        supervisor \
         ca-certificates \
         wget \
         curl \
         gnupg \
         gpg \
-        git # Ensure git is installed
+        git
+    # Install supervisor only if needed
+    if [ "$SETUP_MODE" == "supervisord" ]; then
+        echo "Installing supervisor for supervisord mode..."
+        # Enable EPEL for supervisor if not CentOS Stream/Fedora
+        if [[ "$OS_ID" == "almalinux" || "$OS_ID" == "centos" || "$OS_ID" == "rhel" ]]; then
+           dnf -y install epel-release || true
+        fi
+        dnf -y install supervisor
+    fi
     dnf -y clean all
     rm -rf /var/cache/dnf/*
 
-    # Configure Locale (Basic setup, might need glibc-langpack-en if minimal base)
-    # localectl set-locale LANG=${SETUP_LOCALE} # Use if localectl is available
-    echo "LANG=${SETUP_LOCALE}" > /etc/locale.conf # Fallback
+    # Configure Locale (Basic setup)
+    echo "LANG=${SETUP_LOCALE}" > /etc/locale.conf
 
 else
     echo "Error: Unsupported operating system: ${OS_ID}" >&2
@@ -98,58 +111,58 @@ mkdir -p /workspace
 chown -R ${SETUP_USER_NAME}:${SETUP_GROUP_NAME} /workspace
 
 # --- SSH Configuration ---
-echo "Configuring SSH server..."
-mkdir -p /var/run/sshd /etc/ssh
-# Generate host keys if they don't exist
-ssh-keygen -A
-# Ensure correct permissions for sshd directory
-chmod 700 /etc/ssh
+if [ "$SETUP_MODE" == "supervisord" ]; then
+    echo "Configuring SSH server for supervisord mode..."
+    mkdir -p /var/run/sshd /etc/ssh
+    ssh-keygen -A
+    chmod 700 /etc/ssh
 
-# Modify default sshd_config using sed (safer than overwriting)
-SSHD_CONFIG_FILE=/etc/ssh/sshd_config
-if [ -f "$SSHD_CONFIG_FILE" ]; then
-    echo "Modifying $SSHD_CONFIG_FILE..."
-    # Allow Password Authentication (for dev convenience)
-    sed -i 's/^#\?PasswordAuthentication.*/PasswordAuthentication yes/g' $SSHD_CONFIG_FILE
-    # Disallow Root Login (Security Best Practice)
-    sed -i 's/^#\?PermitRootLogin.*/PermitRootLogin no/g' $SSHD_CONFIG_FILE
-    # Ensure other necessary defaults (might vary slightly by distro defaults)
-    grep -qxF 'ChallengeResponseAuthentication no' $SSHD_CONFIG_FILE || echo 'ChallengeResponseAuthentication no' >> $SSHD_CONFIG_FILE
-    grep -qxF 'UsePAM yes' $SSHD_CONFIG_FILE || echo 'UsePAM yes' >> $SSHD_CONFIG_FILE
-    grep -qxF 'X11Forwarding yes' $SSHD_CONFIG_FILE || echo 'X11Forwarding yes' >> $SSHD_CONFIG_FILE
-    grep -qxF 'PrintMotd no' $SSHD_CONFIG_FILE || echo 'PrintMotd no' >> $SSHD_CONFIG_FILE
-    grep -qxF 'AcceptEnv LANG LC_*' $SSHD_CONFIG_FILE || echo 'AcceptEnv LANG LC_*' >> $SSHD_CONFIG_FILE
-    # Check if Subsystem sftp line exists before adding
-    if ! grep -q 'Subsystem\s*sftp' $SSHD_CONFIG_FILE; then
-         # Path might differ, check common locations
-         SFTP_SERVER_PATH=$(find /usr/lib* -name sftp-server | head -n 1)
-         if [ -n "$SFTP_SERVER_PATH" ]; then
-             echo "Subsystem sftp $SFTP_SERVER_PATH" >> $SSHD_CONFIG_FILE
-         else
-             echo "Warning: sftp-server not found, Subsystem sftp not added."
-         fi
+    SSHD_CONFIG_FILE=/etc/ssh/sshd_config
+    if [ -f "$SSHD_CONFIG_FILE" ]; then
+        echo "Modifying $SSHD_CONFIG_FILE..."
+        sed -i 's/^#\?PasswordAuthentication.*/PasswordAuthentication yes/g' $SSHD_CONFIG_FILE
+        sed -i 's/^#\?PermitRootLogin.*/PermitRootLogin no/g' $SSHD_CONFIG_FILE
+        grep -qxF 'ChallengeResponseAuthentication no' $SSHD_CONFIG_FILE || echo 'ChallengeResponseAuthentication no' >> $SSHD_CONFIG_FILE
+        grep -qxF 'UsePAM yes' $SSHD_CONFIG_FILE || echo 'UsePAM yes' >> $SSHD_CONFIG_FILE
+        grep -qxF 'X11Forwarding yes' $SSHD_CONFIG_FILE || echo 'X11Forwarding yes' >> $SSHD_CONFIG_FILE
+        grep -qxF 'PrintMotd no' $SSHD_CONFIG_FILE || echo 'PrintMotd no' >> $SSHD_CONFIG_FILE
+        grep -qxF 'AcceptEnv LANG LC_*' $SSHD_CONFIG_FILE || echo 'AcceptEnv LANG LC_*' >> $SSHD_CONFIG_FILE
+        if ! grep -q 'Subsystem\s*sftp' $SSHD_CONFIG_FILE; then
+             SFTP_SERVER_PATH=$(find /usr/lib* -name sftp-server | head -n 1)
+             if [ -n "$SFTP_SERVER_PATH" ]; then
+                 echo "Subsystem sftp $SFTP_SERVER_PATH" >> $SSHD_CONFIG_FILE
+             else
+                 echo "Warning: sftp-server not found, Subsystem sftp not added."
+             fi
+        fi
+    else
+        echo "Warning: $SSHD_CONFIG_FILE not found. Skipping SSH configuration modification."
+    fi
+
+    # Modify PAM if needed (Ubuntu specific fix)
+    if [ -f /etc/pam.d/sshd ] && [ "$OS_ID" == "ubuntu" ]; then
+        sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd;
     fi
 else
-    echo "Warning: $SSHD_CONFIG_FILE not found. Skipping SSH configuration modification."
-fi
-
-# Modify PAM if needed (Ubuntu specific fix)
-if [ -f /etc/pam.d/sshd ] && [ "$OS_ID" == "ubuntu" ]; then
-    sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd;
+    echo "Skipping detailed SSH configuration for systemd mode (handled in Dockerfile)."
+    # Still ensure sshd run directory exists for systemd service
+    mkdir -p /var/run/sshd 
 fi
 
 # --- Supervisor Base Config ---
-echo "Setting up Supervisor directories..."
-SUPERVISOR_CONF_DIR=/etc/supervisor/conf.d # Standard path for package install
-mkdir -p ${SUPERVISOR_CONF_DIR}
-mkdir -p /var/log/supervisor
-# supervisord runs as root, so root should own logs
-touch /var/log/supervisor/supervisord.log
-touch /var/log/supervisor/sshd.log
-touch /var/log/supervisor/sshd.err
-# Ensure correct permissions for log files and directory
-chmod 640 /var/log/supervisor/*
-chown root:root /var/log/supervisor/* # Or root:adm if supervisor runs as adm
-chmod 755 /var/log/supervisor
+if [ "$SETUP_MODE" == "supervisord" ]; then
+    echo "Setting up Supervisor directories for supervisord mode..."
+    SUPERVISOR_CONF_DIR=/etc/supervisor/conf.d
+    mkdir -p ${SUPERVISOR_CONF_DIR}
+    mkdir -p /var/log/supervisor
+    touch /var/log/supervisor/supervisord.log
+    touch /var/log/supervisor/sshd.log
+    touch /var/log/supervisor/sshd.err
+    chmod 640 /var/log/supervisor/*
+    chown root:root /var/log/supervisor/*
+    chmod 755 /var/log/supervisor
+else
+    echo "Skipping Supervisor directory setup for systemd mode."
+fi
 
-echo "Unified common setup script completed."
+echo "Unified common setup script completed (Mode: ${SETUP_MODE})."
