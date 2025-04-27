@@ -7,6 +7,9 @@ services:
       - "description=AlmaLinux 9 base systemd with dev tools"
     hostname: shuai-alma-dev
     privileged: true
+    tmpfs:
+      - /run
+      - /tmp
     restart: always
     shm_size: 16g
     ipc: host
@@ -32,6 +35,7 @@ services:
         #   - http_proxy=${HTTP_PROXY}
         #   - https_proxy=${HTTPS_PROXY}
     volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
       - /data:/data
       - /data1:/data1
       - /data2:/data2
@@ -46,7 +50,7 @@ services:
       - CONDA_DISABLE_PROGRESS_BARS=1
       # - SSH_PASSWORD=phoenix2024
     ports:
-      - "28965:22"
+      - "28961:22"
     working_dir: /home/shijiashuai
     # Add signal for systemd graceful shutdown
     stop_signal: SIGRTMIN+3

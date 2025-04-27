@@ -5,8 +5,8 @@
 
 # 容器和服务信息 (与 docker-compose.yaml 和 1-build.sh 保持一致)
 CONTAINER_NAME="shuai-alma-dev"
-IMAGE_NAME="shuai/alma9-dev:1.0"
-SSH_PORT="28965"
+IMAGE_NAME="shuai/alma-dev:1.0"
+SSH_PORT="28961"
 SSH_USER="shijiashuai"
 # 从 start.sh 获取 SSH_PASSWORD
 SSH_PASSWORD="phoenix2024"
@@ -30,6 +30,28 @@ show_help() {
     echo "  help     - Show this help message"
 }
 
+# 检查宿主机内核版本是否满足要求
+check_kernel_version() {
+    local host_kernel=$(uname -r)
+    local min_kernel_major=4
+    local min_kernel_minor=18
+
+    local host_major=$(echo "$host_kernel" | cut -d '.' -f 1)
+    local host_minor=$(echo "$host_kernel" | cut -d '.' -f 2)
+
+    echo "Host kernel version: $host_kernel"
+    echo "Minimum required kernel version for systemd container: ${min_kernel_major}.${min_kernel_minor}"
+
+    if [[ "$host_major" -lt "$min_kernel_major" ]] || \
+       ( [[ "$host_major" -eq "$min_kernel_major" ]] && [[ "$host_minor" -lt "$min_kernel_minor" ]] ); then
+        echo "Error: Host kernel version ($host_kernel) is too low."
+        echo "This systemd-based container requires kernel version ${min_kernel_major}.${min_kernel_minor} or higher to run properly."
+        echo "Please run this container on a host with a newer kernel."
+        exit 1
+    fi
+    echo "Host kernel version meets the requirement."
+}
+
 # 构建容器 (调用 1-build.sh)
 build_container() {
     echo "Building development environment container..."
@@ -40,8 +62,11 @@ build_container() {
 start_container() {
     echo "Starting container ${CONTAINER_NAME}..."
 
-    # 检查镜像是否存在 (可选, build 脚本应该已保证)
-    if ! docker images | grep -q "${IMAGE_NAME%%:*}" | grep -q "${IMAGE_NAME##*:}"; then
+    # 添加内核版本检查
+    check_kernel_version
+
+    # 检查镜像是否存在
+    if ! docker image inspect "${IMAGE_NAME}" &> /dev/null; then
         echo "Error: Image ${IMAGE_NAME} not found. Please run './2-dev-cli.sh build' first."
         exit 1
     fi
