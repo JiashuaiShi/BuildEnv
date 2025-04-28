@@ -208,7 +208,7 @@ WORKDIR /home/${USER_NAME}
 # 安装 Miniconda (统一逻辑)
 RUN wget -q -O /tmp/miniconda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh && \
     chmod +x /tmp/miniconda.sh && \
-    bash /tmp/miniconda.sh -b -p $HOME/miniconda && \
+    bash /tmp/miniconda.sh -b -u -p $HOME/miniconda && \
     rm -f /tmp/miniconda.sh && \
     $HOME/miniconda/bin/conda init bash && \
     $HOME/miniconda/bin/conda init zsh && \

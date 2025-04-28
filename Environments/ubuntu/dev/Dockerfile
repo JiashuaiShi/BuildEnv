@@ -330,16 +330,17 @@ RUN if [ -x "$HOME/miniconda/bin/pip" ]; then \
     fi
 
 # --- 安装中文语言包并设置 Locale ---
+# 切换回 root 用户执行安装
+USER root
 # 安装语言包
 RUN apt-get update && apt-get install -y --no-install-recommends language-pack-zh-hans && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 # 设置环境变量
 ENV LANG=zh_CN.UTF-8 LC_ALL=zh_CN.UTF-8
 
-# 切换回root用户完成最终配置
-USER root
-
-# Expose Netdata port (optional)
+# --- 最终镜像配置 ---
+# 不需要再次切换回 root，因为我们已经是 root
+# 暴露 Netdata 端口 (optional)
 EXPOSE 28970
 
 # 开放SSH端口 (已由脚本完成)
@@ -352,33 +353,6 @@ CMD ["/usr/bin/supervisord", "-n", "-c", "/etc/supervisor/conf.d/supervisord.con
 # 注意：不在这里切换用户，让 supervisord 以 root 运行
 # 默认工作目录设置（影响进入容器时的默认目录）
 WORKDIR /home/shijiashuai
-
-#################################################
-# Miniconda (用户级)
-#################################################
-# 切换到普通用户进行安装
-USER shijiashuai
-WORKDIR /home/shijiashuai
-
-# 下载并安装 Miniconda
-RUN wget -q -O /tmp/miniconda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh && \
-    chmod +x /tmp/miniconda.sh && \
-    # 使用 -b 批处理模式, -p 指定安装路径
-    bash /tmp/miniconda.sh -b -p $HOME/miniconda && \
-    rm -f /tmp/miniconda.sh && \
-    # 初始化 conda (bash 和 zsh - 假设 zsh 也已安装)
-    $HOME/miniconda/bin/conda init bash && \
-    $HOME/miniconda/bin/conda init zsh && \
-    # 配置 conda (常用设置)
-    $HOME/miniconda/bin/conda config --set always_yes yes && \
-    $HOME/miniconda/bin/conda config --set auto_activate_base false && \
-    $HOME/miniconda/bin/conda config --set ssl_verify false && \
-    $HOME/miniconda/bin/conda config --set remote_read_timeout_secs 600 && \
-    $HOME/miniconda/bin/conda config --set remote_connect_timeout_secs 60 && \
-    $HOME/miniconda/bin/conda config --set remote_max_retries 10
-
-# 安装用户指定的 Python 包 (可选)
-# RUN $HOME/miniconda/bin/pip install --no-cache-dir matplotlib psrecord
 
 # 切换回 root 以便设置 CMD
 USER root
