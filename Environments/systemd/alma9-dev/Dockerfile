@@ -126,6 +126,11 @@ RUN dnf -y install golang rust cargo && \
 COPY Environments/systemd/alma9-dev/jdk_switcher.sh /usr/local/bin/jdk
 RUN chmod +x /usr/local/bin/jdk
 
+# --- 安装中文语言包并设置默认 Locale ---
+# (Moved before USER switch to run as root)
+RUN dnf -y install glibc-langpack-zh && dnf clean all
+ENV LANG=zh_CN.UTF-8 LC_ALL=zh_CN.UTF-8
+
 # --- 用户特定环境配置 (保持不变) ---
 USER ${USER_NAME}
 WORKDIR /home/${USER_NAME}
@@ -164,12 +169,8 @@ RUN echo -e '\n# JDK Aliases' >> $HOME/.zshrc && \
 RUN echo "export PATH=\"/data-lush/lush-dev/${USER_NAME}/build-tools/apps:\$PATH\"" >> $HOME/.bashrc && \
     echo "export PATH=\"/data-lush/lush-dev/${USER_NAME}/build-tools/apps:\$PATH\"" >> $HOME/.zshrc
 
-# Python Packages
+# --- Install Python Packages using Conda's pip ---
 RUN $HOME/miniconda/bin/pip install --no-cache-dir matplotlib psrecord || echo "Miniconda pip install failed"
-
-# --- 安装中文语言包并设置默认 Locale ---
-RUN dnf -y install glibc-langpack-zh && dnf clean all
-ENV LANG=zh_CN.UTF-8 LC_ALL=zh_CN.UTF-8
 
 # --- 最终镜像配置 (保持不变) ---
 USER ${USER_NAME}

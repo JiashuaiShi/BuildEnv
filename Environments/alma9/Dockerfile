@@ -116,6 +116,11 @@ RUN chmod 644 /etc/supervisor/conf.d/supervisord.conf
 COPY Environments/alma9/jdk_switcher.sh /usr/local/bin/jdk
 RUN chmod +x /usr/local/bin/jdk
 
+# --- 安装中文语言包并设置默认 Locale ---
+# (Moved before USER switch to run as root)
+RUN dnf -y install glibc-langpack-zh && dnf clean all
+ENV LANG=zh_CN.UTF-8 LC_ALL=zh_CN.UTF-8
+
 # --- 用户特定环境配置 ---
 # 切换到普通用户 (unified-common-setup.sh 已创建)
 USER shijiashuai
@@ -162,10 +167,6 @@ RUN echo "export PATH=\"/data-lush/lush-dev/${USER_NAME}/build-tools/apps:\$PATH
 
 # 安装用户指定的 Python 包 (保持不变)
 RUN $HOME/miniconda/bin/pip install --no-cache-dir matplotlib psrecord || echo "Miniconda pip install failed"
-
-# --- 安装中文语言包并设置默认 Locale ---
-RUN dnf -y install glibc-langpack-zh && dnf clean all
-ENV LANG=zh_CN.UTF-8 LC_ALL=zh_CN.UTF-8
 
 # --- 最终镜像配置 ---
 # 切换回 root 以便设置 CMD
