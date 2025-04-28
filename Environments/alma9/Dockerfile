@@ -57,8 +57,23 @@ RUN dnf -y groupinstall "Development Tools" && \
 #################################################
 # Java 开发环境
 #################################################
-RUN dnf -y install java-1.8.0-openjdk-devel java-11-openjdk-devel java-17-openjdk-devel maven gradle && \
+# 安装 JDK 和 Maven (这些在仓库中可用)
+RUN dnf -y install java-1.8.0-openjdk-devel java-11-openjdk-devel java-17-openjdk-devel maven && \
     dnf clean all
+
+# 手动安装 Gradle
+ENV GRADLE_VERSION=8.6
+ENV GRADLE_HOME=/opt/gradle
+RUN dnf -y install unzip && \
+    mkdir -p ${GRADLE_HOME} && \
+    cd /tmp && \
+    curl -LO https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip && \
+    unzip gradle-${GRADLE_VERSION}-bin.zip -d /opt && \
+    ln -s /opt/gradle-${GRADLE_VERSION} ${GRADLE_HOME} && \
+    ln -s ${GRADLE_HOME}/bin/gradle /usr/bin/gradle && \
+    rm gradle-${GRADLE_VERSION}-bin.zip && \
+    # 验证安装结果
+    gradle --version || echo "Gradle installed but not in PATH"
 
 # 配置 Java alternatives (保持不变)
 RUN for version in 8 11 17; do \
