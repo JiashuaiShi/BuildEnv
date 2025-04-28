@@ -141,14 +141,10 @@ RUN apt-get update -o Acquire::Check-Valid-Until=false -o Acquire::Check-Date=fa
     # 添加 Go 和 Rust
     golang-go \
     rustc cargo \
+    # 添加 netdata 包
+    netdata \
     && rm -rf /var/lib/apt/lists/* && \
     apt-get clean || true
-
-# --- 安装 Netdata ---
-RUN curl -Ss https://my-netdata.io/kickstart.sh -o /tmp/netdata-kickstart.sh && \
-    bash /tmp/netdata-kickstart.sh --dont-wait --non-interactive || echo "Netdata installation skipped or failed" && \
-    rm -f /tmp/netdata-kickstart.sh
-RUN if [ -f /etc/systemd/system/netdata.service ]; then systemctl enable netdata; fi
 
 # --- 安装 sbt (Scala Build Tool) ---
 RUN echo "deb https://repo.scala-sbt.org/scalasbt/debian all main" | tee /etc/apt/sources.list.d/sbt.list && \

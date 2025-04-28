@@ -190,13 +190,10 @@ RUN apt-get update -o Acquire::Check-Valid-Until=false -o Acquire::Check-Date=fa
     less \
     tmux \
     perl \
+    # 安装 netdata 包
+    netdata \
     && rm -rf /var/lib/apt/lists/* && \
     apt-get clean || true
-
-# --- Add Netdata Installation ---
-RUN apt-get update -o Acquire::Check-Valid-Until=false -o Acquire::Check-Date=false || true && \
-    apt-get install -y curl && \
-    bash <(curl -Ss https://my-netdata.io/kickstart.sh) --dont-wait --non-interactive || echo "Netdata installation skipped or failed"
 
 # 配置 supervisor (基础目录已由脚本创建)
 COPY Environments/ubuntu/dev/supervisord.conf /etc/supervisor/conf.d/supervisord.conf

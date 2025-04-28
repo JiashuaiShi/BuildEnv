@@ -2,13 +2,13 @@
 
 # 获取脚本所在目录
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-# 获取项目根目录 (脚本目录的上两级)
-PROJECT_ROOT=$(cd "$SCRIPT_DIR/../.." &> /dev/null && pwd)
+# 获取项目根目录 (脚本目录的上三级)
+PROJECT_ROOT=$(cd "$SCRIPT_DIR/../../.." &> /dev/null && pwd)
 
 # 切换到项目根目录执行
 cd "$PROJECT_ROOT" || exit 1
 
-# 指定 compose 文件路径
+# 指定 compose 文件路径 (相对于项目根目录)
 COMPOSE_FILE="Environments/ubuntu/dev/docker-compose.yaml"
 
 echo "========== Building Unified Development Environment (Supervisord) =========="

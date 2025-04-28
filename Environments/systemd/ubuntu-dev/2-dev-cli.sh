@@ -3,6 +3,14 @@
 # Ubuntu Development Environment Management Tool
 # Usage: ./2-dev-cli.sh [command]
 
+# 获取脚本所在目录
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+# 获取项目根目录 (脚本目录的上三级)
+PROJECT_ROOT=$(cd "$SCRIPT_DIR/../../.." &> /dev/null && pwd)
+
+# Compose 文件路径 (相对于项目根目录)
+COMPOSE_FILE_REL_PATH="Environments/systemd/ubuntu-dev/docker-compose.yaml"
+
 # 容器和服务信息 (与 docker-compose.yaml 和 1-build.sh 保持一致)
 CONTAINER_NAME="shuai-ubuntu-dev"
 IMAGE_NAME="shuai/ubuntu-dev:1.0"
@@ -172,7 +180,7 @@ exec_in_container() {
 # 主函数
 main() {
     # 切换到脚本所在目录，确保 docker-compose 能找到文件
-    cd "$(dirname "$0")" || exit 1
+    cd "$SCRIPT_DIR" || exit 1
 
     case "$1" in
         build)

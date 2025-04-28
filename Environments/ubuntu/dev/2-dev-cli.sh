@@ -5,8 +5,8 @@
 
 # 获取脚本所在目录
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-# 获取项目根目录
-PROJECT_ROOT=$(cd "$SCRIPT_DIR/../.." &> /dev/null && pwd)
+# 获取项目根目录 (脚本目录的上三级)
+PROJECT_ROOT=$(cd "$SCRIPT_DIR/../../.." &> /dev/null && pwd)
 
 # Compose 文件路径 (相对于项目根目录)
 COMPOSE_FILE_REL_PATH="Environments/ubuntu/dev/docker-compose.yaml"

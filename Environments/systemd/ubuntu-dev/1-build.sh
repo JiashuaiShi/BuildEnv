@@ -4,6 +4,12 @@ set -e
 # --- Configuration ---
 # Get script's directory
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+# Get project root directory (three levels up from script directory)
+PROJECT_ROOT=$(cd "$SCRIPT_DIR/../../.." &> /dev/null && pwd)
+
+# Switch to project root directory
+cd "$PROJECT_ROOT" || exit 1
+
 # Define base image directory relative to this script
 BASE_DIR=$(realpath "$SCRIPT_DIR/../ubuntu-base")
 # Define base image name and tag
