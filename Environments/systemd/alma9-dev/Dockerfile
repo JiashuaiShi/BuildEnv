@@ -167,6 +167,10 @@ RUN echo "export PATH=\"/data-lush/lush-dev/${USER_NAME}/build-tools/apps:\$PATH
 # Python Packages
 RUN $HOME/miniconda/bin/pip install --no-cache-dir matplotlib psrecord || echo "Miniconda pip install failed"
 
+# --- 安装中文语言包并设置默认 Locale ---
+RUN dnf -y install glibc-langpack-zh && dnf clean all
+ENV LANG=zh_CN.UTF-8 LC_ALL=zh_CN.UTF-8
+
 # --- 最终镜像配置 (保持不变) ---
 USER ${USER_NAME}
 WORKDIR /home/${USER_NAME}

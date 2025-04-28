@@ -309,7 +309,7 @@ RUN wget -q -O /tmp/miniconda.sh https://repo.anaconda.com/miniconda/Miniconda3-
 RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended || true && \
     git clone --depth=1 https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-autosuggestions || true && \
     git clone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting || true && \
-    sed -i 's/plugins=(git)/plugins=(git maven gradle conda zsh-autosuggestions zsh-syntax-highlighting)/' $HOME/.zshrc || true && \
+    sed -i 's/^plugins=(.*)/plugins=(git gradle conda zsh-autosuggestions zsh-syntax-highlighting)/' $HOME/.zshrc || true && \
     # Ensure the user owns the config file after modification
     chown shijiashuai:lush-dev $HOME/.zshrc
 
@@ -329,6 +329,13 @@ RUN if [ -x "$HOME/miniconda/bin/pip" ]; then \
     else \
         echo "Miniconda pip not found, skipping matplotlib/psrecord installation."; \
     fi
+
+# --- 安装中文语言包并设置 Locale ---
+# 安装语言包
+RUN apt-get update && apt-get install -y --no-install-recommends language-pack-zh-hans && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+# 设置环境变量
+ENV LANG=zh_CN.UTF-8 LC_ALL=zh_CN.UTF-8
 
 # 切换回root用户完成最终配置
 USER root

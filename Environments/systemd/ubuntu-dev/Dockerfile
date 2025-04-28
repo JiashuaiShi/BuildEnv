@@ -223,7 +223,7 @@ RUN wget -q -O /tmp/miniconda.sh https://repo.anaconda.com/miniconda/Miniconda3-
 RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended || true
 RUN git clone --depth=1 https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-autosuggestions || true
 RUN git clone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting || true
-RUN sed -i 's/^plugins=(git)/plugins=(git sudo maven gradle conda zsh-autosuggestions zsh-syntax-highlighting)/' $HOME/.zshrc || true
+RUN sed -i 's/^plugins=(.*)/plugins=(git sudo gradle conda zsh-autosuggestions zsh-syntax-highlighting)/' $HOME/.zshrc || true
 
 # 添加 JDK 切换别名到 .bashrc 和 .zshrc
 RUN echo 'alias jdk8="source /usr/local/bin/jdk 8"' >> $HOME/.bashrc && \
@@ -239,6 +239,16 @@ RUN echo "export PATH=\"/data-lush/lush-dev/${USER_NAME}/build-tools/apps:$PATH\
 
 # --- Install Python Packages using Conda's pip ---
 RUN $HOME/miniconda/bin/pip install --no-cache-dir matplotlib psrecord || echo "Miniconda pip install failed"
+
+# --- 安装中文语言包并设置 Locale ---
+# 安装语言包
+USER root
+RUN apt-get update && apt-get install -y --no-install-recommends language-pack-zh-hans && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+# 设置环境变量
+ENV LANG=zh_CN.UTF-8 LC_ALL=zh_CN.UTF-8
+# 切换回之前的用户
+USER ${USER_NAME}
 
 #################################################
 # 最终配置
