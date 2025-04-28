@@ -17,6 +17,22 @@ ARG SETUP_MODE=systemd
 # 避免交互式提示
 ENV DEBIAN_FRONTEND=noninteractive
 
+# --- Configure APT sources for Aliyun mirror ---
+# Install prerequisites
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates gnupg curl && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Download Aliyun GPG key, dearmor, and place in /usr/share/keyrings
+RUN curl -fsSL https://mirrors.aliyun.com/ubuntu/dists/noble/Release.gpg | gpg --dearmor -o /usr/share/keyrings/aliyun-ubuntu-archive-keyring.gpg
+
+# Create the sources list file pointing to the key
+RUN echo "deb [signed-by=/usr/share/keyrings/aliyun-ubuntu-archive-keyring.gpg] http://mirrors.aliyun.com/ubuntu/ noble main restricted universe multiverse" > /etc/apt/sources.list.d/aliyun.list && \
+    echo "deb [signed-by=/usr/share/keyrings/aliyun-ubuntu-archive-keyring.gpg] http://mirrors.aliyun.com/ubuntu/ noble-security main restricted universe multiverse" >> /etc/apt/sources.list.d/aliyun.list && \
+    echo "deb [signed-by=/usr/share/keyrings/aliyun-ubuntu-archive-keyring.gpg] http://mirrors.aliyun.com/ubuntu/ noble-updates main restricted universe multiverse" >> /etc/apt/sources.list.d/aliyun.list && \
+    echo "deb [signed-by=/usr/share/keyrings/aliyun-ubuntu-archive-keyring.gpg] http://mirrors.aliyun.com/ubuntu/ noble-backports main restricted universe multiverse" >> /etc/apt/sources.list.d/aliyun.list
+
+# Remove original sources.list if it exists (optional but clean)
+RUN rm -f /etc/apt/sources.list
+
 # --- Unified Setup Script Handles Base Packages, User/Group, Sudo --- #
 # REMOVED redundant package installs and user setup here
 

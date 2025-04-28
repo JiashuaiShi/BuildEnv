@@ -18,35 +18,47 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=Asia/Shanghai
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
-# 先安装基础工具
-RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates gnupg curl
+# --- Configure APT sources for Aliyun mirror ---
+# Install prerequisites
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates gnupg curl && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# 添加阿里云 GPG 密钥
-RUN mkdir -p /etc/apt/keyrings && \
-    curl -fsSL https://mirrors.aliyun.com/ubuntu/dists/noble/Release.gpg | gpg --dearmor -o /etc/apt/keyrings/aliyun-ubuntu.gpg && \
-    echo "deb [signed-by=/etc/apt/keyrings/aliyun-ubuntu.gpg] http://mirrors.aliyun.com/ubuntu/ noble main restricted universe multiverse" > /etc/apt/sources.list && \
-    echo "deb [signed-by=/etc/apt/keyrings/aliyun-ubuntu.gpg] http://mirrors.aliyun.com/ubuntu/ noble-security main restricted universe multiverse" >> /etc/apt/sources.list && \
-    echo "deb [signed-by=/etc/apt/keyrings/aliyun-ubuntu.gpg] http://mirrors.aliyun.com/ubuntu/ noble-updates main restricted universe multiverse" >> /etc/apt/sources.list && \
-    echo "deb [signed-by=/etc/apt/keyrings/aliyun-ubuntu.gpg] http://mirrors.aliyun.com/ubuntu/ noble-backports main restricted universe multiverse" >> /etc/apt/sources.list
+# Download Aliyun GPG key, dearmor, and place in /usr/share/keyrings
+RUN curl -fsSL https://mirrors.aliyun.com/ubuntu/dists/noble/Release.gpg | gpg --dearmor -o /usr/share/keyrings/aliyun-ubuntu-archive-keyring.gpg
 
-# 添加配置以忽略GPG签名验证和修复Post-Invoke脚本问题
-RUN mkdir -p /etc/apt/apt.conf.d/ && \
-    echo 'APT::Update::Post-Invoke-Success { "rm -f /var/cache/apt/archives/*.deb /var/cache/apt/archives/partial/*.deb /var/cache/apt/*.bin || true"; };' > /etc/apt/apt.conf.d/99fixpostrm && \
-    echo 'Dir::Etc::TrustedParts "/etc/apt/keyrings/";' > /etc/apt/apt.conf.d/99keyrings
+# Create the sources list file pointing to the key
+RUN echo "deb [signed-by=/usr/share/keyrings/aliyun-ubuntu-archive-keyring.gpg] http://mirrors.aliyun.com/ubuntu/ noble main restricted universe multiverse" > /etc/apt/sources.list.d/aliyun.list && \
+    echo "deb [signed-by=/usr/share/keyrings/aliyun-ubuntu-archive-keyring.gpg] http://mirrors.aliyun.com/ubuntu/ noble-security main restricted universe multiverse" >> /etc/apt/sources.list.d/aliyun.list && \
+    echo "deb [signed-by=/usr/share/keyrings/aliyun-ubuntu-archive-keyring.gpg] http://mirrors.aliyun.com/ubuntu/ noble-updates main restricted universe multiverse" >> /etc/apt/sources.list.d/aliyun.list && \
+    echo "deb [signed-by=/usr/share/keyrings/aliyun-ubuntu-archive-keyring.gpg] http://mirrors.aliyun.com/ubuntu/ noble-backports main restricted universe multiverse" >> /etc/apt/sources.list.d/aliyun.list
 
-# 安装基础组件
+# Remove original sources.list if it exists (optional but clean)
+RUN rm -f /etc/apt/sources.list
+
+# --- Install Base Packages (including common-setup script deps) ---
+# Now run update using the new sources and key
 RUN apt-get update -o Acquire::Check-Valid-Until=false -o Acquire::Check-Date=false || true && \
     apt-get install -y --no-install-recommends \
-    ubuntu-keyring \
-    apt-transport-https \
-    software-properties-common \
+    # Packages needed by common-setup script
+    sudo \
+    locales \
+    zsh \
+    openssh-server \
     wget \
     gpg \
+    # Other potentially useful base packages
+    apt-transport-https \
+    software-properties-common \
+    ubuntu-keyring \
+    apt-utils \
+    git \
+    supervisor \
+    # Add curl back if needed elsewhere, gnupg already installed
+    curl \
     && rm -rf /var/lib/apt/lists/* && \
     apt-get clean || true
 
 # --- Run Unified Common Setup Script ---
-COPY scripts/unified-common-setup.sh /tmp/
+COPY /scripts/unified-common-setup.sh /tmp/
 RUN chmod +x /tmp/unified-common-setup.sh && \
     export SETUP_MODE=${SETUP_MODE} && \
     /tmp/unified-common-setup.sh && \
