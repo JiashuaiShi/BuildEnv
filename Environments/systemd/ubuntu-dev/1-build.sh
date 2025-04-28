@@ -63,16 +63,24 @@ if docker ps -a --format '{{.Names}}' | grep -q "^${DEV_CONTAINER_NAME}$"; then
     docker-compose down --remove-orphans || echo "'docker-compose down' failed, continuing build..."
 fi
 
-# Build the dev image using docker-compose
-echo "Starting dev image build process using docker-compose..."
-# Pass the desired UID/GID/etc. as build arguments
-echo "Passing build args: USER_NAME=${DESIRED_USER_NAME}, USER_UID=${DESIRED_UID}, USER_GID=${DESIRED_GID}"
-# Add more --build-arg flags if passing password, etc.
-if docker-compose build --build-arg USER_NAME=${DESIRED_USER_NAME} --build-arg USER_UID=${DESIRED_UID} --build-arg USER_GID=${DESIRED_GID}; then
+# Build the dev image using direct docker build
+echo "Starting dev image build process using docker build..."
+
+# Define build arguments (these are now handled by unified script if hardcoded there)
+# Or pass them if script uses ARGs
+# Example: BUILD_ARGS="--build-arg USER_NAME=${DESIRED_USER_NAME} ..."
+BUILD_ARGS="--build-arg SETUP_MODE=systemd"
+
+# Define Dockerfile path relative to project root
+DOCKERFILE_PATH="Environments/systemd/ubuntu-dev/Dockerfile"
+
+# Execute docker build from project root (context is .)
+echo "Building ${DEV_IMAGE_FULL} from ${DOCKERFILE_PATH}..."
+if docker build ${BUILD_ARGS} -f "${DOCKERFILE_PATH}" -t "${DEV_IMAGE_FULL}" . ; then
     echo "========== Build Complete =========="
     echo "Development image ${DEV_IMAGE_FULL} built successfully."
-    echo "To start the container, run: ./2-dev-cli.sh start"
+    echo "To start the container, run: ./2-dev-cli.sh start" # Make sure 2-dev-cli.sh is adapted
 else
-    echo "Build failed for development image ${DEV_IMAGE_FULL}."
+    echo "Build failed for development image ${DEV_IMAGE_FULL} using docker build."
     exit 1
 fi 

@@ -18,20 +18,31 @@ ARG SETUP_MODE=systemd
 ENV DEBIAN_FRONTEND=noninteractive
 
 # --- Configure APT sources for Aliyun mirror ---
-# Install prerequisites
-RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates gnupg curl && apt-get clean && rm -rf /var/lib/apt/lists/*
+# Install prerequisites for adding custom repos/keys
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates gnupg curl wget && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Download Aliyun GPG key, dearmor, and place in /usr/share/keyrings
-RUN curl -fsSL https://mirrors.aliyun.com/ubuntu/dists/noble/Release.gpg | gpg --dearmor -o /usr/share/keyrings/aliyun-ubuntu-archive-keyring.gpg
+# Download Aliyun GPG key, dearmor, verify, set permissions, and place in keyrings dir
+RUN KEY_URL="https://mirrors.aliyun.com/ubuntu/dists/noble/Release.gpg" && \
+    KEY_PATH="/usr/share/keyrings/aliyun-ubuntu-archive-keyring.gpg" && \
+    mkdir -p /usr/share/keyrings && \
+    curl -fsSL "${KEY_URL}" | gpg --dearmor -o "${KEY_PATH}" && \
+    # Verify key file exists and is not empty
+    if [ ! -s "${KEY_PATH}" ]; then echo "Error: Key file ${KEY_PATH} is empty or missing."; exit 1; fi && \
+    chmod 644 "${KEY_PATH}"
 
 # Create the sources list file pointing to the key
-RUN echo "deb [signed-by=/usr/share/keyrings/aliyun-ubuntu-archive-keyring.gpg] http://mirrors.aliyun.com/ubuntu/ noble main restricted universe multiverse" > /etc/apt/sources.list.d/aliyun.list && \
-    echo "deb [signed-by=/usr/share/keyrings/aliyun-ubuntu-archive-keyring.gpg] http://mirrors.aliyun.com/ubuntu/ noble-security main restricted universe multiverse" >> /etc/apt/sources.list.d/aliyun.list && \
-    echo "deb [signed-by=/usr/share/keyrings/aliyun-ubuntu-archive-keyring.gpg] http://mirrors.aliyun.com/ubuntu/ noble-updates main restricted universe multiverse" >> /etc/apt/sources.list.d/aliyun.list && \
-    echo "deb [signed-by=/usr/share/keyrings/aliyun-ubuntu-archive-keyring.gpg] http://mirrors.aliyun.com/ubuntu/ noble-backports main restricted universe multiverse" >> /etc/apt/sources.list.d/aliyun.list
+RUN KEY_PATH="/usr/share/keyrings/aliyun-ubuntu-archive-keyring.gpg" && \
+    echo "deb [signed-by=${KEY_PATH}] http://mirrors.aliyun.com/ubuntu/ noble main restricted universe multiverse" > /etc/apt/sources.list.d/aliyun.list && \
+    echo "deb [signed-by=${KEY_PATH}] http://mirrors.aliyun.com/ubuntu/ noble-security main restricted universe multiverse" >> /etc/apt/sources.list.d/aliyun.list && \
+    echo "deb [signed-by=${KEY_PATH}] http://mirrors.aliyun.com/ubuntu/ noble-updates main restricted universe multiverse" >> /etc/apt/sources.list.d/aliyun.list && \
+    echo "deb [signed-by=${KEY_PATH}] http://mirrors.aliyun.com/ubuntu/ noble-backports main restricted universe multiverse" >> /etc/apt/sources.list.d/aliyun.list
 
-# Remove original sources.list if it exists (optional but clean)
+# Remove original sources.list if it exists
 RUN rm -f /etc/apt/sources.list
+
+# --- Update APT cache using the new sources and key ---
+# Fail build if update fails due to key/source issues
+RUN apt-get update
 
 # --- Unified Setup Script Handles Base Packages, User/Group, Sudo --- #
 # REMOVED redundant package installs and user setup here

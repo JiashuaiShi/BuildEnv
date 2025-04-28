@@ -30,14 +30,30 @@ if docker ps -a --format '{{.Names}}' | grep -q "shuai-ubuntu-dev"; then
     docker-compose -f "$COMPOSE_FILE" down --remove-orphans 2>/dev/null || true
 fi
 
-# 开始构建容器 - 使用 compose 文件
-echo "Starting build process..."
+# 开始构建容器 - 使用直接的 docker build
+echo "Starting build process using docker build..."
 echo "Note: This may take a while, please be patient..."
-if docker-compose -f "$COMPOSE_FILE" build; then
+
+# Define image name and tag
+IMAGE_NAME="shuai/ubuntu-dev"
+IMAGE_TAG="1.0"
+IMAGE_FULL="${IMAGE_NAME}:${IMAGE_TAG}"
+
+# Define build arguments (previously in docker-compose.yaml)
+# Note: User/Group args are now handled by unified script
+# Ensure common script has correct hardcoded values or pass them if script uses ARGs
+BUILD_ARGS="--build-arg SETUP_MODE=supervisord"
+
+# Define Dockerfile path relative to project root
+DOCKERFILE_PATH="Environments/ubuntu/dev/Dockerfile"
+
+# Execute docker build from project root
+if docker build ${BUILD_ARGS} -f "${DOCKERFILE_PATH}" -t "${IMAGE_FULL}" . ; then
     echo "========== Build Complete =========="
+    echo "Image ${IMAGE_FULL} built successfully."
     echo "To start the container, navigate to Environments/ubuntu/dev and run:"
-    echo "./2-dev-cli.sh start" # 或者提供绝对路径的启动方式
+    echo "./2-dev-cli.sh start"
 else
-    echo "Build failed"
+    echo "Build failed using docker build."
     exit 1
 fi 

@@ -19,32 +19,40 @@ ENV TZ=Asia/Shanghai
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 # --- Configure APT sources for Aliyun mirror ---
-# Install prerequisites
-RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates gnupg curl && apt-get clean && rm -rf /var/lib/apt/lists/*
+# Install prerequisites for adding custom repos/keys
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates gnupg curl wget && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Download Aliyun GPG key, dearmor, and place in /usr/share/keyrings
-RUN curl -fsSL https://mirrors.aliyun.com/ubuntu/dists/noble/Release.gpg | gpg --dearmor -o /usr/share/keyrings/aliyun-ubuntu-archive-keyring.gpg
+# Download Aliyun GPG key, dearmor, verify, set permissions, and place in keyrings dir
+RUN KEY_URL="https://mirrors.aliyun.com/ubuntu/dists/noble/Release.gpg" && \
+    KEY_PATH="/usr/share/keyrings/aliyun-ubuntu-archive-keyring.gpg" && \
+    mkdir -p /usr/share/keyrings && \
+    curl -fsSL "${KEY_URL}" | gpg --dearmor -o "${KEY_PATH}" && \
+    # Verify key file exists and is not empty
+    if [ ! -s "${KEY_PATH}" ]; then echo "Error: Key file ${KEY_PATH} is empty or missing."; exit 1; fi && \
+    chmod 644 "${KEY_PATH}"
 
 # Create the sources list file pointing to the key
-RUN echo "deb [signed-by=/usr/share/keyrings/aliyun-ubuntu-archive-keyring.gpg] http://mirrors.aliyun.com/ubuntu/ noble main restricted universe multiverse" > /etc/apt/sources.list.d/aliyun.list && \
-    echo "deb [signed-by=/usr/share/keyrings/aliyun-ubuntu-archive-keyring.gpg] http://mirrors.aliyun.com/ubuntu/ noble-security main restricted universe multiverse" >> /etc/apt/sources.list.d/aliyun.list && \
-    echo "deb [signed-by=/usr/share/keyrings/aliyun-ubuntu-archive-keyring.gpg] http://mirrors.aliyun.com/ubuntu/ noble-updates main restricted universe multiverse" >> /etc/apt/sources.list.d/aliyun.list && \
-    echo "deb [signed-by=/usr/share/keyrings/aliyun-ubuntu-archive-keyring.gpg] http://mirrors.aliyun.com/ubuntu/ noble-backports main restricted universe multiverse" >> /etc/apt/sources.list.d/aliyun.list
+RUN KEY_PATH="/usr/share/keyrings/aliyun-ubuntu-archive-keyring.gpg" && \
+    echo "deb [signed-by=${KEY_PATH}] http://mirrors.aliyun.com/ubuntu/ noble main restricted universe multiverse" > /etc/apt/sources.list.d/aliyun.list && \
+    echo "deb [signed-by=${KEY_PATH}] http://mirrors.aliyun.com/ubuntu/ noble-security main restricted universe multiverse" >> /etc/apt/sources.list.d/aliyun.list && \
+    echo "deb [signed-by=${KEY_PATH}] http://mirrors.aliyun.com/ubuntu/ noble-updates main restricted universe multiverse" >> /etc/apt/sources.list.d/aliyun.list && \
+    echo "deb [signed-by=${KEY_PATH}] http://mirrors.aliyun.com/ubuntu/ noble-backports main restricted universe multiverse" >> /etc/apt/sources.list.d/aliyun.list
 
-# Remove original sources.list if it exists (optional but clean)
+# Remove original sources.list if it exists
 RUN rm -f /etc/apt/sources.list
 
+# --- Update APT cache using the new sources and key ---
+# Fail build if update fails due to key/source issues
+RUN apt-get update
+
 # --- Install Base Packages (including common-setup script deps) ---
-# Now run update using the new sources and key
-RUN apt-get update -o Acquire::Check-Valid-Until=false -o Acquire::Check-Date=false || true && \
-    apt-get install -y --no-install-recommends \
+RUN apt-get install -y --no-install-recommends \
     # Packages needed by common-setup script
     sudo \
     locales \
     zsh \
     openssh-server \
-    wget \
-    gpg \
+    # wget, gpg, curl already installed above
     # Other potentially useful base packages
     apt-transport-https \
     software-properties-common \
@@ -52,13 +60,10 @@ RUN apt-get update -o Acquire::Check-Valid-Until=false -o Acquire::Check-Date=fa
     apt-utils \
     git \
     supervisor \
-    # Add curl back if needed elsewhere, gnupg already installed
-    curl \
-    && rm -rf /var/lib/apt/lists/* && \
-    apt-get clean || true
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # --- Run Unified Common Setup Script ---
-COPY /scripts/unified-common-setup.sh /tmp/
+COPY scripts/unified-common-setup.sh /tmp/
 RUN chmod +x /tmp/unified-common-setup.sh && \
     export SETUP_MODE=${SETUP_MODE} && \
     /tmp/unified-common-setup.sh && \
