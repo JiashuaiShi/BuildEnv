@@ -18,30 +18,19 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=Asia/Shanghai
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
-# --- Configure APT sources for Aliyun mirror ---
-# Install prerequisites for adding custom repos/keys
-RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates gnupg curl wget && apt-get clean && rm -rf /var/lib/apt/lists/*
+# --- Configure APT sources --- 
+# (Removing Aliyun mirror configuration to use official sources)
 
-# Download Aliyun GPG key, dearmor, verify, set permissions, and place in keyrings dir
-RUN KEY_URL="https://mirrors.aliyun.com/ubuntu/dists/noble/Release.gpg" && \
-    KEY_PATH="/usr/share/keyrings/aliyun-ubuntu-archive-keyring.gpg" && \
-    mkdir -p /usr/share/keyrings && \
-    curl -fsSL "${KEY_URL}" | gpg --dearmor -o "${KEY_PATH}" && \
-    # Verify key file exists and is not empty
-    if [ ! -s "${KEY_PATH}" ]; then echo "Error: Key file ${KEY_PATH} is empty or missing."; exit 1; fi && \
-    chmod 644 "${KEY_PATH}"
+# Install prerequisites needed *before* the main apt-get update/install steps
+# Note: Using default sources now.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    gnupg \
+    curl \
+    wget \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Create the sources list file pointing to the key
-RUN KEY_PATH="/usr/share/keyrings/aliyun-ubuntu-archive-keyring.gpg" && \
-    echo "deb [signed-by=${KEY_PATH}] http://mirrors.aliyun.com/ubuntu/ noble main restricted universe multiverse" > /etc/apt/sources.list.d/aliyun.list && \
-    echo "deb [signed-by=${KEY_PATH}] http://mirrors.aliyun.com/ubuntu/ noble-security main restricted universe multiverse" >> /etc/apt/sources.list.d/aliyun.list && \
-    echo "deb [signed-by=${KEY_PATH}] http://mirrors.aliyun.com/ubuntu/ noble-updates main restricted universe multiverse" >> /etc/apt/sources.list.d/aliyun.list && \
-    echo "deb [signed-by=${KEY_PATH}] http://mirrors.aliyun.com/ubuntu/ noble-backports main restricted universe multiverse" >> /etc/apt/sources.list.d/aliyun.list
-
-# Remove original sources.list if it exists
-RUN rm -f /etc/apt/sources.list
-
-# --- Update APT cache using the new sources and key ---
+# --- Update APT cache using official sources ---
 # Fail build if update fails due to key/source issues
 RUN apt-get update
 
