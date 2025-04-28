@@ -18,19 +18,41 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=Asia/Shanghai
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
-# --- Configure APT sources --- 
-# (Removing Aliyun mirror configuration to use official sources)
-
-# Install prerequisites needed *before* the main apt-get update/install steps
-# Note: Using default sources now.
+# --- Configure APT sources for Aliyun mirror using the required Ubuntu Key ---
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    ca-certificates \
-    gnupg \
-    curl \
-    wget \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
+        curl ca-certificates gnupg wget \
+    && rm -rf /var/lib/apt/lists/* \
+    # Define variables within the RUN command's shell environment
+    && ALIYUN_MIRROR_URL="http://mirrors.aliyun.com/ubuntu/" \
+    && MISSING_KEY_ID="871920D1991BC93C" \
+    && KEY_FILE_PATH="/usr/share/keyrings/ubuntu-archive-${MISSING_KEY_ID}.gpg" \
+    \
+    # 1. (可选) 禁用官方源配置文件，避免冲突
+    && if [ -f /etc/apt/sources.list.d/ubuntu.sources ]; then \
+           mv /etc/apt/sources.list.d/ubuntu.sources /etc/apt/sources.list.d/ubuntu.sources.disabled; \
+           echo "Disabled /etc/apt/sources.list.d/ubuntu.sources"; \
+       else \
+           echo "/etc/apt/sources.list.d/ubuntu.sources not found, skipping disable."; \
+       fi \
+    \
+    # 2. 创建 /etc/apt/sources.list 指向阿里云, 并指定用下载的 Ubuntu 密钥验证
+    && echo "deb [signed-by=${KEY_FILE_PATH}] ${ALIYUN_MIRROR_URL} noble main restricted universe multiverse" > /etc/apt/sources.list \
+    && echo "deb [signed-by=${KEY_FILE_PATH}] ${ALIYUN_MIRROR_URL} noble-security main restricted universe multiverse" >> /etc/apt/sources.list \
+    && echo "deb [signed-by=${KEY_FILE_PATH}] ${ALIYUN_MIRROR_URL} noble-updates main restricted universe multiverse" >> /etc/apt/sources.list \
+    && echo "deb [signed-by=${KEY_FILE_PATH}] ${ALIYUN_MIRROR_URL} noble-backports main restricted universe multiverse" >> /etc/apt/sources.list \
+    \
+    # 3. 下载缺失的 Ubuntu GPG 密钥并保存到指定路径
+    && echo "Downloading GPG key ${MISSING_KEY_ID} to ${KEY_FILE_PATH}..." \
+    && curl -fsSL "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x${MISSING_KEY_ID}" | gpg --dearmor -o "${KEY_FILE_PATH}" \
+    && chmod 644 "${KEY_FILE_PATH}" \
+    # Verify key download
+    && if [ ! -s "${KEY_FILE_PATH}" ]; then echo "Error: Failed to download GPG key ${MISSING_KEY_ID}."; exit 1; fi \
+    && echo "GPG key downloaded and permissions set." \
+    \
+    # 4. Clean up before the next step's update
+    && apt-get clean
 
-# --- Update APT cache using official sources ---
+# --- Update APT cache using the new sources and key ---
 # Fail build if update fails due to key/source issues
 RUN apt-get update
 
