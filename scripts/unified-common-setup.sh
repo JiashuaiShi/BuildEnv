@@ -61,8 +61,8 @@ if [ "$OS_ID" == "ubuntu" ] || [ "$OS_ID" == "debian" ]; then
 
 elif [ "$OS_ID" == "almalinux" ] || [ "$OS_ID" == "centos" ] || [ "$OS_ID" == "rhel" ] || [ "$OS_ID" == "fedora" ]; then
     dnf -y update || true
-    # Install base packages needed for both modes
-    dnf -y install \
+    # Install base packages needed for both modes, allow erasing conflicting packages like curl-minimal
+    dnf -y install --allowerasing \
         sudo \
         zsh \
         openssh-server \

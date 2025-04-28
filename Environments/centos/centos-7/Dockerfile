@@ -1,13 +1,11 @@
 # 使用CentOS 7作为基础镜像
-FROM centos:7.6.1810
+FROM centos:7.9.2009
 
 # 设置维护者信息
 LABEL maintainer="shijiashuai" description="CentOS 7 with C++ development tools" organization="BGI"
 
-# 设置环境变量（根据需要修改）
-ENV http_proxy http://172.16.55.9:443
-ENV https_proxy http://172.16.55.9:443
-ENV no_proxy localhost;127.*;10.*;172.16.*;172.17.*;172.18.*;172.19.*;172.20.*;172.21.*;172.22.*;172.23.*;172.24.*;172.25.*;172.26.*;172.27.*;172.28.*;172.29.*;172.30.*;172.31.*;192.168.*
+# Switch CentOS repositories to vault.centos.org
+RUN sed -i -e 's/mirrorlist/#mirrorlist/g' -e 's/^#baseurl=http:\\/\\/mirror\\.centos\\.org/baseurl=http:\\/\\/vault\\.centos\\.org/g' /etc/yum.repos.d/CentOS-*.repo
 
 # 更新系统并安装C++开发所需的工具和库
 # 更新系统并安装C++开发所需的工具和库

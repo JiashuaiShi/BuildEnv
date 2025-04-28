@@ -1,10 +1,14 @@
 #!/bin/bash
 
-echo "========== Building Unified Development Environment =========="
+# 获取脚本所在目录并切换过去
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+cd "$SCRIPT_DIR" || exit 1
+
+echo "========== Building Unified Development Environment (Supervisord) =========="
 echo "This environment includes C++/Java/Python development tools"
 
 # 设置环境变量优化构建
-export DOCKER_BUILDKIT=1
+export DOCKER_BUILDKIT=0
 export COMPOSE_DOCKER_CLI_BUILD=1
 export DOCKER_DEFAULT_PLATFORM=linux/amd64
 export PYTHONUNBUFFERED=1

@@ -12,8 +12,8 @@ services:
     stdin_open: true
     tty: true
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ../..
+      dockerfile: Environments/alma9/Dockerfile
       args:
         # 用户配置
         - USER_NAME=shijiashuai

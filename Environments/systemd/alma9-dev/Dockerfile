@@ -108,7 +108,7 @@ RUN dnf -y install golang rust cargo && \
     dnf clean all
 
 # --- 工具配置 (保持不变) ---
-COPY jdk_switcher.sh /usr/local/bin/jdk
+COPY Environments/systemd/alma9-dev/jdk_switcher.sh /usr/local/bin/jdk
 RUN chmod +x /usr/local/bin/jdk
 
 # --- 用户特定环境配置 (保持不变) ---

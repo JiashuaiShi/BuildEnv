@@ -21,8 +21,8 @@ services:
     security_opt:
       - seccomp=unconfined
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ../../..
+      dockerfile: Environments/systemd/ubuntu-dev/Dockerfile
       args:
         # 用户配置 (统一为 ID/ID)
         - USER_NAME=shijiashuai

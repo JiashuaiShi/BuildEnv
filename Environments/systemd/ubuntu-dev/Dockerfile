@@ -162,7 +162,7 @@ RUN echo "deb https://repo.scala-sbt.org/scalasbt/debian all main" | tee /etc/ap
 #################################################
 # 工具配置部分
 #################################################
-COPY --chown=root:root jdk_switcher.sh /usr/local/bin/jdk
+COPY --chown=root:root Environments/systemd/ubuntu-dev/jdk_switcher.sh /usr/local/bin/jdk
 RUN chmod +x /usr/local/bin/jdk
 
 #################################################

@@ -16,6 +16,9 @@ RUN chmod +x /tmp/unified-common-setup.sh && \
     /tmp/unified-common-setup.sh && \
     rm /tmp/unified-common-setup.sh
 
+# --- Ensure EPEL is enabled before installing dev tools ---
+RUN dnf -y install epel-release && dnf clean all
+
 # --- 系统基础设置 (如有必要，可在 setup 脚本后补充安装) ---
 # unified-common-setup.sh 已安装许多基础工具，这里可能不需要重复安装
 # RUN dnf -y update && ...
@@ -89,11 +92,11 @@ RUN dnf -y install golang rust cargo && \
 
 # --- 工具配置 ---
 # 配置 supervisor
-COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+COPY Environments/alma9/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 RUN chmod 644 /etc/supervisor/conf.d/supervisord.conf
 
 # 复制并设置 JDK 切换脚本 (保持不变)
-COPY jdk_switcher.sh /usr/local/bin/jdk
+COPY Environments/alma9/jdk_switcher.sh /usr/local/bin/jdk
 RUN chmod +x /usr/local/bin/jdk
 
 # --- 用户特定环境配置 ---

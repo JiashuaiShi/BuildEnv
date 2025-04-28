@@ -37,6 +37,7 @@ RUN mkdir -p /etc/apt/apt.conf.d/ && \
 # 安装基础组件
 RUN apt-get update -o Acquire::Check-Valid-Until=false -o Acquire::Check-Date=false || true && \
     apt-get install -y --no-install-recommends --allow-unauthenticated \
+    ubuntu-keyring \
     ca-certificates \
     gnupg \
     wget \
@@ -49,7 +50,7 @@ RUN apt-get update -o Acquire::Check-Valid-Until=false -o Acquire::Check-Date=fa
 
 # --- Run Unified Common User Setup Script ---
 COPY scripts/unified-common-setup.sh /tmp/
-RUN chmod +x /tmp/unified-common-setup.sh && \
+    RUN chmod +x /tmp/unified-common-setup.sh && \
     export SETUP_MODE=${SETUP_MODE} && \
     /tmp/unified-common-setup.sh && \
     rm /tmp/unified-common-setup.sh
@@ -201,7 +202,7 @@ RUN apt-get update -o Acquire::Check-Valid-Until=false -o Acquire::Check-Date=fa
     bash <(curl -Ss https://my-netdata.io/kickstart.sh) --dont-wait --non-interactive || echo "Netdata installation skipped or failed"
 
 # 配置 supervisor (基础目录已由脚本创建)
-COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+COPY Environments/ubuntu/dev/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 RUN chmod 644 /etc/supervisor/conf.d/supervisord.conf
 
 # SSH服务安装和配置 (已由脚本完成)

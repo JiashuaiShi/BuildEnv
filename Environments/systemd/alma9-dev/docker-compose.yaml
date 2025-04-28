@@ -21,8 +21,8 @@ services:
     security_opt:
       - seccomp=unconfined
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ../../..
+      dockerfile: Environments/systemd/alma9-dev/Dockerfile
 
       args:
         # 用户配置
