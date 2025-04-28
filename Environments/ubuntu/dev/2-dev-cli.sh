@@ -3,6 +3,18 @@
 # 统一开发环境管理工具
 # Usage: ./2-dev-cli.sh [command]
 
+# 获取脚本所在目录
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+# 获取项目根目录
+PROJECT_ROOT=$(cd "$SCRIPT_DIR/../.." &> /dev/null && pwd)
+
+# Compose 文件路径 (相对于项目根目录)
+COMPOSE_FILE_REL_PATH="Environments/ubuntu/dev/docker-compose.yaml"
+COMPOSE_FILE_ABS_PATH="$PROJECT_ROOT/$COMPOSE_FILE_REL_PATH"
+
+# 构建脚本路径
+BUILD_SCRIPT_PATH="$SCRIPT_DIR/1-build.sh"
+
 CONTAINER_NAME="shuai-ubuntu-dev" # 与 docker-compose.yaml 保持一致
 IMAGE_NAME="shuai/ubuntu-dev:1.0" # 与 docker-compose.yaml 保持一致
 SSH_PORT="28962" # 与 docker-compose.yaml 保持一致
@@ -31,28 +43,26 @@ show_help() {
 # 构建容器 (调用 1-build.sh)
 build_container() {
     echo "Building unified development container..."
-    # 假设 build.sh 已重命名为 1-build.sh
-    if [ -f ./1-build.sh ]; then
-        ./1-build.sh
-    elif [ -f ./build.sh ]; then # 兼容旧名称
-        echo "Warning: build.sh found, expected 1-build.sh. Running build.sh..."
-        ./build.sh
+    if [ -f "$BUILD_SCRIPT_PATH" ]; then
+        # 1-build.sh 会自己 cd 到 project root
+        "$BUILD_SCRIPT_PATH"
     else
-        echo "Error: Build script (1-build.sh or build.sh) not found."
+        echo "Error: Build script ($BUILD_SCRIPT_PATH) not found."
         exit 1
     fi
 }
 
 # 启动容器 (使用 docker-compose)
 start_container() {
-    echo "Starting container ${CONTAINER_NAME}..."
+    echo "Starting container ${CONTAINER_NAME} from ${COMPOSE_FILE_ABS_PATH}..."
     # 检查镜像是否存在
     if ! docker image inspect "${IMAGE_NAME}" &> /dev/null; then
         echo "Error: Image ${IMAGE_NAME} not found. Please run './2-dev-cli.sh build' first."
         exit 1
     fi
 
-    if docker-compose up -d; then
+    # 在项目根目录执行 docker-compose up
+    if (cd "$PROJECT_ROOT" && docker-compose -f "$COMPOSE_FILE_REL_PATH" up -d); then
         echo "Waiting for container services (like SSH)..."
         sleep 8 # 增加等待时间确保 supervisord 启动 sshd
 
@@ -88,67 +98,67 @@ start_container() {
 
 # 停止容器 (使用 docker-compose)
 stop_container() {
-    echo "Stopping container ${CONTAINER_NAME}..."
-    docker-compose stop
+    echo "Stopping container ${CONTAINER_NAME} using ${COMPOSE_FILE_ABS_PATH}..."
+    (cd "$PROJECT_ROOT" && docker-compose -f "$COMPOSE_FILE_REL_PATH" stop)
 }
 
 # 停止并删除容器及网络 (使用 docker-compose)
 down_container() {
-    echo "Stopping and removing container ${CONTAINER_NAME}..."
-    docker-compose down --remove-orphans
+    echo "Stopping and removing container ${CONTAINER_NAME} using ${COMPOSE_FILE_ABS_PATH}..."
+    (cd "$PROJECT_ROOT" && docker-compose -f "$COMPOSE_FILE_REL_PATH" down --remove-orphans)
 }
 
 # 重启容器 (使用 docker-compose)
 restart_container() {
-    echo "Restarting container ${CONTAINER_NAME}..."
-    docker-compose restart
+    echo "Restarting container ${CONTAINER_NAME} using ${COMPOSE_FILE_ABS_PATH}..."
+    (cd "$PROJECT_ROOT" && docker-compose -f "$COMPOSE_FILE_REL_PATH" restart)
 
     echo "Waiting for SSH service..."
     sleep 5
     echo "Container restarted. Use './2-dev-cli.sh ssh' to connect."
 }
 
-# SSH连接到容器
+# SSH连接到容器 (这个不需要 compose 文件)
 ssh_to_container() {
-    echo "Connecting to container ${CONTAINER_NAME}..."
+    echo "Connecting to container ${CONTAINER_NAME} (Port ${SSH_PORT})..."
     ssh -p ${SSH_PORT} ${SSH_USER}@localhost
 }
 
 # 显示容器状态 (使用 docker-compose)
 show_status() {
-    echo "Container status:"
-    docker-compose ps
+    echo "Container status (using ${COMPOSE_FILE_ABS_PATH}):"
+    (cd "$PROJECT_ROOT" && docker-compose -f "$COMPOSE_FILE_REL_PATH" ps)
 }
 
 # 显示容器日志 (使用 docker-compose)
 show_logs() {
-    echo "Container logs for ${CONTAINER_NAME}:"
-    docker-compose logs --follow
+    echo "Container logs for ${CONTAINER_NAME} (using ${COMPOSE_FILE_ABS_PATH}):"
+    (cd "$PROJECT_ROOT" && docker-compose -f "$COMPOSE_FILE_REL_PATH" logs --follow)
 }
 
 # 清理容器和镜像 (使用 docker-compose)
 clean_container() {
-    echo "Cleaning environment for ${CONTAINER_NAME}..."
-    docker-compose down --volumes --remove-orphans --rmi all 2>/dev/null || echo "Cleanup finished, some resources might remain (e.g., network if shared)."
+    echo "Cleaning environment defined in ${COMPOSE_FILE_ABS_PATH}..."
+    (cd "$PROJECT_ROOT" && docker-compose -f "$COMPOSE_FILE_REL_PATH" down --volumes --remove-orphans --rmi all 2>/dev/null || echo "Cleanup finished, some resources might remain.")
     echo "Cleanup attempt finished."
 }
 
-# 在容器中执行命令 (保持不变, 使用 docker exec)
+# 在容器中执行命令 (这个不需要 compose 文件)
 exec_in_container() {
-    if [ -z "$2" ]; then
+    if [ -z "$1" ]; then
         echo "错误: 需要指定要执行的命令"
         echo "用法: ./2-dev-cli.sh exec \"<命令>\""
         exit 1
     fi
-    echo "在容器中执行: $2"
-    docker exec -it $CONTAINER_NAME bash -c "$2"
+    shift # Remove 'exec'
+    local cmd_to_run="$@"
+    echo "在容器 $CONTAINER_NAME 中执行: $cmd_to_run"
+    docker exec -it $CONTAINER_NAME bash -c "$cmd_to_run"
 }
 
 # 主函数
 main() {
-    # 切换到脚本所在目录，确保 docker-compose 能找到文件
-    cd "$(dirname "$0")" || exit 1
-
+    # 不再需要 cd 到脚本目录，因为路径都是绝对或相对于项目根目录
     case "$1" in
         build)
             build_container
@@ -159,7 +169,7 @@ main() {
         stop)
             stop_container
             ;;
-        down) # 添加 down 命令
+        down)
             down_container
             ;;
         restart)
@@ -178,7 +188,6 @@ main() {
             clean_container
             ;;
         exec)
-            shift # 移除 'exec'
             exec_in_container "$@"
             ;;
         help|--help|-h|"")
@@ -192,7 +201,11 @@ main() {
     esac
 }
 
-# 检查 docker-compose 命令是否存在
+# 检查 docker 和 docker-compose 命令是否存在
+if ! command -v docker &> /dev/null; then
+    echo "Error: docker command could not be found." 
+    exit 1
+fi
 if ! command -v docker-compose &> /dev/null; then
     echo "Error: docker-compose could not be found. Please install it."
     exit 1

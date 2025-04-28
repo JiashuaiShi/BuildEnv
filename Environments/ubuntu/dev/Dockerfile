@@ -18,39 +18,36 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=Asia/Shanghai
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
-# 替换apt源为国内镜像（阿里云）
-RUN cp /etc/apt/sources.list /etc/apt/sources.list.bak && \
-    echo "deb http://mirrors.aliyun.com/ubuntu/ noble main restricted universe multiverse" > /etc/apt/sources.list && \
-    echo "deb http://mirrors.aliyun.com/ubuntu/ noble-security main restricted universe multiverse" >> /etc/apt/sources.list && \
-    echo "deb http://mirrors.aliyun.com/ubuntu/ noble-updates main restricted universe multiverse" >> /etc/apt/sources.list && \
-    echo "deb http://mirrors.aliyun.com/ubuntu/ noble-backports main restricted universe multiverse" >> /etc/apt/sources.list
+# 先安装基础工具
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates gnupg curl
+
+# 添加阿里云 GPG 密钥
+RUN mkdir -p /etc/apt/keyrings && \
+    curl -fsSL https://mirrors.aliyun.com/ubuntu/dists/noble/Release.gpg | gpg --dearmor -o /etc/apt/keyrings/aliyun-ubuntu.gpg && \
+    echo "deb [signed-by=/etc/apt/keyrings/aliyun-ubuntu.gpg] http://mirrors.aliyun.com/ubuntu/ noble main restricted universe multiverse" > /etc/apt/sources.list && \
+    echo "deb [signed-by=/etc/apt/keyrings/aliyun-ubuntu.gpg] http://mirrors.aliyun.com/ubuntu/ noble-security main restricted universe multiverse" >> /etc/apt/sources.list && \
+    echo "deb [signed-by=/etc/apt/keyrings/aliyun-ubuntu.gpg] http://mirrors.aliyun.com/ubuntu/ noble-updates main restricted universe multiverse" >> /etc/apt/sources.list && \
+    echo "deb [signed-by=/etc/apt/keyrings/aliyun-ubuntu.gpg] http://mirrors.aliyun.com/ubuntu/ noble-backports main restricted universe multiverse" >> /etc/apt/sources.list
 
 # 添加配置以忽略GPG签名验证和修复Post-Invoke脚本问题
 RUN mkdir -p /etc/apt/apt.conf.d/ && \
-    echo 'APT::Get::AllowUnauthenticated "true";' > /etc/apt/apt.conf.d/99allow-unauthenticated && \
-    echo 'Acquire::AllowInsecureRepositories "true";' >> /etc/apt/apt.conf.d/99allow-unauthenticated && \
-    echo 'Acquire::AllowDowngradeToInsecureRepositories "true";' >> /etc/apt/apt.conf.d/99allow-unauthenticated && \
     echo 'APT::Update::Post-Invoke-Success { "rm -f /var/cache/apt/archives/*.deb /var/cache/apt/archives/partial/*.deb /var/cache/apt/*.bin || true"; };' > /etc/apt/apt.conf.d/99fixpostrm && \
-    echo 'Dir::Etc::TrustedParts "/etc/apt/keyrings/";' > /etc/apt/apt.conf.d/99keyrings && \
-    mkdir -p /etc/apt/keyrings
+    echo 'Dir::Etc::TrustedParts "/etc/apt/keyrings/";' > /etc/apt/apt.conf.d/99keyrings
 
 # 安装基础组件
 RUN apt-get update -o Acquire::Check-Valid-Until=false -o Acquire::Check-Date=false || true && \
-    apt-get install -y --no-install-recommends --allow-unauthenticated \
+    apt-get install -y --no-install-recommends \
     ubuntu-keyring \
-    ca-certificates \
-    gnupg \
-    wget \
-    gpg \
-    curl \
     apt-transport-https \
     software-properties-common \
+    wget \
+    gpg \
     && rm -rf /var/lib/apt/lists/* && \
     apt-get clean || true
 
-# --- Run Unified Common User Setup Script ---
+# --- Run Unified Common Setup Script ---
 COPY scripts/unified-common-setup.sh /tmp/
-    RUN chmod +x /tmp/unified-common-setup.sh && \
+RUN chmod +x /tmp/unified-common-setup.sh && \
     export SETUP_MODE=${SETUP_MODE} && \
     /tmp/unified-common-setup.sh && \
     rm /tmp/unified-common-setup.sh

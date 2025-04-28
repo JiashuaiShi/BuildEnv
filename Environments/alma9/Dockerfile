@@ -16,8 +16,10 @@ RUN chmod +x /tmp/unified-common-setup.sh && \
     /tmp/unified-common-setup.sh && \
     rm /tmp/unified-common-setup.sh
 
-# --- Ensure EPEL is enabled before installing dev tools ---
-RUN dnf -y install epel-release && dnf clean all
+# --- Ensure EPEL and CRB are enabled before installing dev tools ---
+RUN dnf -y install epel-release && \
+    dnf config-manager --set-enabled crb && \
+    dnf clean all
 
 # --- 系统基础设置 (如有必要，可在 setup 脚本后补充安装) ---
 # unified-common-setup.sh 已安装许多基础工具，这里可能不需要重复安装

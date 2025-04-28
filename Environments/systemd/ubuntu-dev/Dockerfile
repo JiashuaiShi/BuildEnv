@@ -219,3 +219,22 @@ USER ${USER_NAME}
 WORKDIR /home/${USER_NAME}
 
 # systemd 将由基础镜像的 ENTRYPOINT/CMD 启动
+
+# 设置时区 (通过 ENV)
+ENV TZ=Asia/Shanghai
+
+# 先安装基础工具
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates gnupg curl
+
+# 添加阿里云 GPG 密钥
+RUN mkdir -p /etc/apt/keyrings && \
+    curl -fsSL https://mirrors.aliyun.com/ubuntu/dists/noble/Release.gpg | gpg --dearmor -o /etc/apt/keyrings/aliyun-ubuntu.gpg && \
+    echo "deb [signed-by=/etc/apt/keyrings/aliyun-ubuntu.gpg] http://mirrors.aliyun.com/ubuntu/ noble main restricted universe multiverse" > /etc/apt/sources.list && \
+    echo "deb [signed-by=/etc/apt/keyrings/aliyun-ubuntu.gpg] http://mirrors.aliyun.com/ubuntu/ noble-security main restricted universe multiverse" >> /etc/apt/sources.list && \
+    echo "deb [signed-by=/etc/apt/keyrings/aliyun-ubuntu.gpg] http://mirrors.aliyun.com/ubuntu/ noble-updates main restricted universe multiverse" >> /etc/apt/sources.list && \
+    echo "deb [signed-by=/etc/apt/keyrings/aliyun-ubuntu.gpg] http://mirrors.aliyun.com/ubuntu/ noble-backports main restricted universe multiverse" >> /etc/apt/sources.list
+
+# 添加配置以保留 apt 缓存目录和使用 keyrings 目录
+RUN mkdir -p /etc/apt/apt.conf.d/ && \
+    echo 'APT::Update::Post-Invoke-Success { "rm -f /var/cache/apt/archives/*.deb /var/cache/apt/archives/partial/*.deb /var/cache/apt/*.bin || true"; };' > /etc/apt/apt.conf.d/99fixpostrm && \
+    echo 'Dir::Etc::TrustedParts "/etc/apt/keyrings/";' > /etc/apt/apt.conf.d/99keyrings
