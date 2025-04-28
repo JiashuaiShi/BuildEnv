@@ -6,7 +6,7 @@
 # 容器和服务信息 (与 docker-compose.yaml 保持一致)
 CONTAINER_NAME="shuai-alma-dev"
 IMAGE_NAME="shuai/alma-dev:1.0"
-SSH_PORT="28961"
+SSH_PORT="28971"
 SSH_USER="shijiashuai"
 SSH_PASSWORD="phoenix2024" # 假设密码已在统一脚本中设置
 
