@@ -298,7 +298,6 @@ RUN wget -q -O /tmp/miniconda.sh https://repo.anaconda.com/miniconda/Miniconda3-
     $HOME/miniconda/bin/conda config --set ssl_verify false && \
     $HOME/miniconda/bin/conda config --set remote_read_timeout_secs 600 && \
     $HOME/miniconda/bin/conda config --set remote_connect_timeout_secs 60 && \
-    $HOME/miniconda/bin/conda config --set concurrent_download_threads 1 && \
     $HOME/miniconda/bin/conda config --set remote_max_retries 10 && \
     echo 'export PATH="$HOME/miniconda/bin:$PATH"' >> $HOME/.bashrc && \
     echo 'export PATH="$HOME/miniconda/bin:$PATH"' >> $HOME/.zshrc && \
