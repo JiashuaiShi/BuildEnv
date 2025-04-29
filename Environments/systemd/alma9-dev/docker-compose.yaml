@@ -51,6 +51,6 @@ services:
       # - SSH_PASSWORD=phoenix2024
     ports:
       - "28961:22"
-    working_dir: /home/shijiashuai
+    working_dir: /data-lush/lush-dev/shijiashuai
     # Add signal for systemd graceful shutdown
     stop_signal: SIGRTMIN+3

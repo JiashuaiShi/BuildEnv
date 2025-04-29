@@ -37,4 +37,4 @@ services:
       - CONDA_DISABLE_PROGRESS_BARS=1
     ports:
       - "28961:22"
-    working_dir: /home/shijiashuai
+    working_dir: /data-lush/lush-dev/shijiashuai
