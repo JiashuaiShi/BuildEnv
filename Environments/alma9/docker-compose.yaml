@@ -21,7 +21,6 @@ services:
         - GROUP_NAME=lush-dev
         - GROUP_ID=2000
         - USER_PASSWORD=phoenix2024
-        - ROOT_PASSWORD=phoenix2024
     volumes:
       - /data:/data
       - /data1:/data1

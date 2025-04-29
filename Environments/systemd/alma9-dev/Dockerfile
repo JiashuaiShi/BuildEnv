@@ -36,7 +36,6 @@ ARG USER_ID=2034
 ARG GROUP_NAME=lush-dev
 ARG GROUP_ID=2000
 ARG USER_PASSWORD=phoenix2024
-ARG ROOT_PASSWORD=phoenix2024
 
 # 启用 sshd 服务 (systemd)
 RUN systemctl enable sshd

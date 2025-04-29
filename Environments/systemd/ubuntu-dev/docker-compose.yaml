@@ -30,7 +30,6 @@ services:
         - GROUP_NAME=lush-dev
         - GROUP_ID=2000 # Changed from USER_GID
         - USER_PASSWORD=phoenix2024
-        - ROOT_PASSWORD=phoenix2024 # 新增
         #   - http_proxy=${HTTP_PROXY}
         #   - https_proxy=${HTTPS_PROXY}
     volumes:
