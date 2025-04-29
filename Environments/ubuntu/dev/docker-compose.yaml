@@ -28,5 +28,5 @@ services:
       - /lush_test:/lush_test
       - /data-lush:/data-lush
     ports:
-      - "28972:22"
+      - "28982:22"
     working_dir: /data-lush/lush-dev/shijiashuai

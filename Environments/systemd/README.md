@@ -63,8 +63,8 @@ Navigate to the specific environment directory (`alma9-dev` or `ubuntu-dev`) fir
 
 3.  **Connect via SSH:**
     Once started, you can connect using the details provided by `./2-dev-cli.sh start` or directly:
-    *   **AlmaLinux:** `ssh -p 28971 shijiashuai@localhost` (Password: phoenix2024)
-    *   **Ubuntu:** `ssh -p 28972 shijiashuai@localhost` (Default Password: password - CHANGE THIS!)
+    *   **AlmaLinux:** `ssh -p 28981 shijiashuai@localhost` (Password: phoenix2024)
+    *   **Ubuntu:** `ssh -p 28982 shijiashuai@localhost` (Default Password: password - CHANGE THIS!)
 
 4.  **Switching JDK Versions (inside the container):**
     Use the provided aliases/functions:

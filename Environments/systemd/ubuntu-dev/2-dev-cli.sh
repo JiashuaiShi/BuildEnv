@@ -14,7 +14,7 @@ COMPOSE_FILE_REL_PATH="Environments/systemd/ubuntu-dev/docker-compose.yaml"
 # 容器和服务信息 (与 docker-compose.yaml 和 1-build.sh 保持一致)
 CONTAINER_NAME="shuai-ubuntu-dev"
 IMAGE_NAME="shuai/ubuntu-dev:1.0"
-SSH_PORT="28972" # Ubuntu 使用的端口
+SSH_PORT="28982" # Ubuntu 使用的端口
 SSH_USER="shijiashuai"
 # 注意：Ubuntu Dockerfile 默认密码是 'password', 但建议通过 SSH key 或首次登录修改
 SSH_PASSWORD="password" # 仅用于信息显示
