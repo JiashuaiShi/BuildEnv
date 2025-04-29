@@ -48,6 +48,6 @@ services:
       - LANG=en_US.UTF-8
       - CONDA_DISABLE_PROGRESS_BARS=1
     ports:
-      - "28964:22"
+      - "28972:22"
     working_dir: /data-lush/lush-dev/shijiashuai
     stop_signal: SIGRTMIN+3

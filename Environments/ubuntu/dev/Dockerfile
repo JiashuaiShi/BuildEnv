@@ -346,10 +346,6 @@ EXPOSE 28970
 # 开放SSH端口 (已由脚本完成)
 EXPOSE 22
 
-# 设置容器启动命令
-# ENTRYPOINT ["/usr/bin/supervisord", "-n", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
-CMD ["/usr/bin/supervisord", "-n", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
-
 # 注意：不在这里切换用户，让 supervisord 以 root 运行
 # 默认工作目录设置（影响进入容器时的默认目录）
 WORKDIR /home/shijiashuai

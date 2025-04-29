@@ -50,7 +50,7 @@ services:
       - CONDA_DISABLE_PROGRESS_BARS=1
       # - SSH_PASSWORD=phoenix2024
     ports:
-      - "28961:22"
+      - "28971:22"
     working_dir: /data-lush/lush-dev/shijiashuai
     # Add signal for systemd graceful shutdown
     stop_signal: SIGRTMIN+3
