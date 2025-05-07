@@ -5,39 +5,45 @@
 
 version: '3.8'
 services:
-  data-castle:
-    labels:
-      version: "1.0"
-      description: "bio dev env"
+  biocontainers-dev:
     environment:
-      - LANG=${LANG} # 使用根.env中的LANG设置
-      - TERM=${TERM} # 使用根.env中的TERM设置
-      - HTTP_PROXY=http://172.19.11.241:443 # 注意：此处的硬编码代理
-      - HTTPS_PROXY=http://172.19.11.241:443 # 注意：此处的硬编码代理
-      - NO_PROXY=localhost,127.*,10.*,172.16.*
-    container_name: ${BIOCONTAINERS_CONTAINER_NAME} # 使用变量
-    hostname: ${BIOCONTAINERS_HOSTNAME} # 使用变量
+      - LANG=${LANG:-zh_CN.UTF-8}
+      - TERM=${TERM:-xterm-256color}
+    container_name: ${BIO_BIOCONTAINERS_CONTAINER_NAME:-biocontainers-dev-env}
+    hostname: ${BIO_BIOCONTAINERS_HOSTNAME:-biocontainers-dev}
     privileged: true
-    restart: no
-    # shm_size: 16g
+    restart: "no"
     ipc: host
-    stdin_open: true # 保持stdin开放
+    stdin_open: true
     tty: true
     cap_add:
       - SYS_PTRACE
     security_opt:
-      - seccomp=unconfined
+      - seccomp:unconfined
     build:
       context: .
-      dockerfile: Dockerfile-BioDev
-    image: ${BIOCONTAINERS_IMAGE_NAME} # 使用变量
+      dockerfile: Dockerfile
+      args:
+        SETUP_USER: ${SSH_USER_NAME:-shijiashuai}
+        SETUP_USER_PASSWORD: ${USER_PASSWORD:-password}
+        LANG: ${LANG:-zh_CN.UTF-8}
+        TERM: ${TERM:-xterm-256color}
+        ENABLE_SSH: ${ENABLE_SSH:-yes}
+        SSH_PORT: "22"
+        ENABLE_SUPERVISOR: ${ENABLE_SUPERVISOR:-yes}
+        ENABLE_SUDO: ${ENABLE_SUDO:-yes}
+        INSTALL_OH_MY_ZSH: ${INSTALL_OH_MY_ZSH:-yes}
+        http_proxy: "${http_proxy}"
+        https_proxy: "${https_proxy}"
+        no_proxy: "${no_proxy}"
+    image: ${BIO_BIOCONTAINERS_IMAGE_REPO:-my-repo/biocontainers-dev}:${BIO_BIOCONTAINERS_IMAGE_TAG:-latest}
     volumes:
-      - /data/lush-dev/shijiashuai/workspace:/workspace
-      - /data:/data
-      - /data1:/data1
+      - ../../data-vol:/data-vol
+      - ../../git-mirrors:/git-mirrors
+      - ../../HPC-Data:/HPC-Data
+      - /etc/localtime:/etc/localtime:ro
     ports:
-      - "${BIOCONTAINERS_SSH_PORT}:22" # 使用变量
-    user: shijiashuai:lush-dev
-    working_dir: /workspace
-    command: ["bash"]
+      - "${BIO_BIOCONTAINERS_SSH_PORT:-2203}:22"
+    user: ${SSH_USER_NAME:-shijiashuai}
+    working_dir: /home/${SSH_USER_NAME:-shijiashuai}
     

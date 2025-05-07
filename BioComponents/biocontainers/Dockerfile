@@ -1,54 +1,59 @@
 # 使用 biocontainers 作为基础镜像
 FROM biocontainers/biocontainers:latest
 
-# 设置全局环境变量，包括代理和非交互模式
-# ENV DEBIAN_FRONTEND=noninteractive \
-#     http_proxy=http://172.19.11.241:443 \
-#     https_proxy=http://172.19.11.241:443 \
-#     no_proxy=localhost,127.*,10.*,172.16.*,172.17.*,172.18.*,172.19.*,172.20.*,172.21.*,172.22.*,172.23.*,172.24.*,172.25.*,172.26.*,172.27.*,172.28.*,172.29.*,172.30.*,172.31.*,192.168.* \
-#     CONDA_SSL_VERIFY=false
-# Use ARG for build-time proxy and ENV noninteractive
+# --- ARGs for build-time configuration ---
+ARG SETUP_USER=devuser
+ARG SETUP_USER_PASSWORD=password
+ARG LANG=zh_CN.UTF-8
+ARG TERM=xterm-256color
+ARG TIMEZONE=Asia/Shanghai
+ARG ENABLE_SSH=yes
+ARG SSH_PORT=22
+ARG ENABLE_SUPERVISOR=yes
+ARG ENABLE_SUDO=yes
+ARG INSTALL_OH_MY_ZSH=yes
+ARG INSTALL_COMMON_TOOLS=yes
+ARG COPY_SSH_KEY=no
+ARG AUTHORIZED_KEYS_FILE=""
+ARG http_proxy
+ARG https_proxy
+ARG no_proxy
+
+# Set build-time proxies if ARGs are provided
 ENV DEBIAN_FRONTEND=noninteractive
-# ENV CONDA_SSL_VERIFY=false
+ENV http_proxy=${http_proxy} \\
+    https_proxy=${https_proxy} \\
+    no_proxy=${no_proxy}
 
-# 切换到 root 用户执行安装软件包等操作
-USER root
+# --- Run Unified Common User Setup Script ---
+# This script handles:
+# - User creation (name, password from ARGs)
+# - Sudo setup
+# - SSH server setup (if ENABLE_SSH=yes)
+# - Supervisor setup (if ENABLE_SUPERVISOR=yes, to manage sshd)
+# - Oh My Zsh installation (if INSTALL_OH_MY_ZSH=yes)
+# - Common tools installation (if INSTALL_COMMON_TOOLS=yes)
+# - Locale and timezone setup
+COPY ../../common/docker-setup-scripts/unified-common-setup.sh /tmp/unified-common-setup.sh
+RUN chmod +x /tmp/unified-common-setup.sh && \\
+    bash /tmp/unified-common-setup.sh && \\
+    rm /tmp/unified-common-setup.sh
 
-# --- Run Common User Setup Script ---
-# Installs: sudo, openssh-server, zsh, supervisor, user/group, basic ssh/supervisor conf
-COPY ../../scripts/common-user-setup.sh /tmp/
-RUN chmod +x /tmp/common-user-setup.sh && \
-    bash /tmp/common-user-setup.sh && \
-    rm /tmp/common-user-setup.sh
+# Environment variables for the created user
+ENV LANG=${LANG} \\
+    TERM=${TERM} \\
+    USER=${SETUP_USER} \\
+    HOME=/home/${SETUP_USER}
 
-# 安装特定工具 (如果基础镜像没有)
-# RUN apt-get update && apt-get install -y --no-install-recommends vim && apt-get clean && rm -rf /var/lib/apt/lists/*
+# Switch to the created user
+USER ${SETUP_USER}
+WORKDIR /home/${SETUP_USER}
 
-# --- Configure Supervisor (Specific Program) ---
-# Base directory and log files created by common script
-RUN echo '[supervisord]\nnodaemon=true\nuser=root\n' > /etc/supervisor/conf.d/supervisord.conf && \
-    echo '[program:sshd]\ncommand=/usr/sbin/sshd -D\nautostart=true\nautorestart=true\nuser=root\n' >> /etc/supervisor/conf.d/supervisord.conf && \
-    chmod 644 /etc/supervisor/conf.d/supervisord.conf
+# Expose SSH port (defined by ARG, default 22, actual mapping in docker-compose)
+EXPOSE ${SSH_PORT}
 
-# 切换到普通用户
-USER shijiashuai
-WORKDIR /home/shijiashuai
+# Default command to start supervisord (if enabled)
+# The unified script sets up supervisord.conf in /etc/supervisor/
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/supervisord.conf"]
 
-# 安装 oh-my-zsh
-RUN rm -rf /home/shijiashuai/.oh-my-zsh && \
-    (git clone https://gitee.com/mirrors/oh-my-zsh.git /home/shijiashuai/.oh-my-zsh || \
-     git clone https://github.com/ohmyzsh/ohmyzsh.git /home/shijiashuai/.oh-my-zsh) && \
-    cp /home/shijiashuai/.oh-my-zsh/templates/zshrc.zsh-template /home/shijiashuai/.zshrc && \
-    chown -R shijiashuai:lush-dev /home/shijiashuai/.oh-my-zsh /home/shijiashuai/.zshrc
-
-# 清理代理环境变量
-USER root
-
-# 开放SSH端口
-EXPOSE 22
-
-# 设置VOLUME
-VOLUME ["/data", "/data1", "/workspace"]
-
-# 设置容器启动时运行的命令
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+# VOLUME [\"/data\", \"/data1\", \"/workspace\"] # Volumes are better managed in docker-compose.yaml
