@@ -5,39 +5,46 @@
 
 version: '3.8'
 services:
-  bioconductor:
-    labels:
-      version: "1.0"
-      description: "bioconductor"
+  bioconductor-dev:
     environment:
-      - LANG=${LANG} # 使用根.env中的LANG设置
-      - TERM=${TERM} # 使用根.env中的TERM设置
-      - HTTP_PROXY=http://172.19.11.241:443 # 注意：此处的硬编码代理
-      - HTTPS_PROXY=http://172.19.11.241:443 # 注意：此处的硬编码代理
-      - NO_PROXY=localhost,127.*,10.*,172.16.*
-    container_name: ${BIOCONDUCTOR_CONTAINER_NAME}
-    hostname: ${BIOCONDUCTOR_HOSTNAME}
+      - LANG=${LANG:-zh_CN.UTF-8}
+      - TERM=${TERM:-xterm-256color}
+    container_name: ${BIO_BIOCONDUCTOR_CONTAINER_NAME:-bioconductor-dev-env}
+    hostname: ${BIO_BIOCONDUCTOR_HOSTNAME:-bioconductor-dev}
     privileged: true
-    restart: no
-    # shm_size: 16g
+    restart: "no"
     ipc: host
-    stdin_open: true # 保持stdin开放
+    stdin_open: true
     tty: true
     cap_add:
       - SYS_PTRACE
     security_opt:
-      - seccomp=unconfined
+      - seccomp:unconfined
     build:
       context: .
       dockerfile: Dockerfile
-    image: ${BIOCONDUCTOR_IMAGE_NAME}
+      args:
+        SETUP_USER: ${SSH_USER_NAME:-shijiashuai}
+        SETUP_USER_PASSWORD: ${USER_PASSWORD:-password}
+        LANG: ${LANG:-zh_CN.UTF-8}
+        TERM: ${TERM:-xterm-256color}
+        ENABLE_SSH: ${ENABLE_SSH:-yes}
+        SSH_PORT: "22"
+        ENABLE_SUPERVISOR: ${ENABLE_SUPERVISOR:-yes}
+        ENABLE_SUDO: ${ENABLE_SUDO:-yes}
+        INSTALL_OH_MY_ZSH: ${INSTALL_OH_MY_ZSH:-yes}
+        ADD_PACKAGES: ${ADD_PACKAGES:-}
+        http_proxy: "${http_proxy}"
+        https_proxy: "${https_proxy}"
+        no_proxy: "${no_proxy}"
+    image: ${BIO_BIOCONDUCTOR_IMAGE_REPO:-my-repo/bioconductor-dev}:${BIO_BIOCONDUCTOR_IMAGE_TAG:-latest}
     volumes:
-      - /data/lush-dev/shijiashuai/workspace:/workspace
-      - /data:/data
-      - /data1:/data1
+      - ../../data-vol:/data-vol
+      - ../../git-mirrors:/git-mirrors
+      - ../../HPC-Data:/HPC-Data
+      - /etc/localtime:/etc/localtime:ro
     ports:
-      - "${BIOCONDUCTOR_SSH_PORT}:22"
-    user: shijiashuai:lush-dev
-    working_dir: /workspace
-    command: ["bash"]
+      - "${BIO_BIOCONDUCTOR_SSH_PORT:-2204}:22"
+    user: ${SSH_USER_NAME:-shijiashuai}
+    working_dir: /home/${SSH_USER_NAME:-shijiashuai}
     
