@@ -5,39 +5,23 @@
 
 version: '3.8'
 services:
-  data-castle:
-    labels:
-      version: "1.0"
-      description: "bio dev env"
+  conda-bio-pkgs:
     environment:
-      - LANG=${LANG} # 使用根.env中的LANG设置
-      - TERM=${TERM} # 使用根.env中的TERM设置
-      - HTTP_PROXY=http://172.19.11.241:443 # 注意：此处的硬编码代理
-      - HTTPS_PROXY=http://172.19.11.241:443 # 注意：此处的硬编码代理
-      - NO_PROXY=localhost,127.*,10.*,172.16.*
-    container_name: ${CONDABIO_CONTAINER_NAME} # 使用变量
-    hostname: ${CONDABIO_HOSTNAME} # 使用变量
-    privileged: true
-    restart: no
-    # shm_size: 16g
-    ipc: host
-    stdin_open: true # 保持stdin开放
+      - LANG=${LANG:-zh_CN.UTF-8}
+      - TERM=${TERM:-xterm-256color}
+    container_name: ${BIO_CONDABIOPKGS_CONTAINER_NAME:-conda-bio-pkgs-tools}
+    restart: "no"
+    stdin_open: true
     tty: true
-    cap_add:
-      - SYS_PTRACE
-    security_opt:
-      - seccomp=unconfined
     build:
       context: .
-      dockerfile: Dockerfile-BioDev
-    image: ${CONDABIO_IMAGE_NAME} # 使用变量
+      dockerfile: Dockerfile
+    image: ${BIO_CONDABIOPKGS_IMAGE_REPO:-my-repo/conda-bio-pkgs}:${BIO_CONDABIOPKGS_IMAGE_TAG:-latest}
     volumes:
-      - /data/lush-dev/shijiashuai/workspace:/workspace
-      - /data:/data
-      - /data1:/data1
-    ports:
-      - "${CONDABIO_SSH_PORT}:22" # 使用变量
-    user: shijiashuai:lush-dev
-    working_dir: /workspace
-    command: ["bash"]
+      - ../../data-vol:/data-vol
+      - ../../git-mirrors:/git-mirrors
+      - ../../HPC-Data:/HPC-Data
+      - /etc/localtime:/etc/localtime:ro
+    working_dir: /data
+    command: ["tail", "-f", "/dev/null"]
     
