@@ -1,18 +1,17 @@
 services:
-  shuai-ubuntu:
-    image: ${UBUNTU_BASE_IMAGE_NAME}
-    container_name: ${UBUNTU_BASE_CONTAINER_NAME}
+  shuai-ubuntu-base-systemd:
+    image: ${UBUNTU_BASE_SYSTEMD_IMAGE_REPO}:${UBUNTU_BASE_SYSTEMD_IMAGE_TAG}
+    container_name: ${UBUNTU_BASE_SYSTEMD_CONTAINER_NAME}
     labels:
       - "maintainer=shijiashuai"
-      - "description=ubuntu 20.04 base"
-    hostname: ${UBUNTU_BASE_HOSTNAME}
+      - "description=Ubuntu Noble base with systemd"
+    hostname: ${UBUNTU_BASE_SYSTEMD_CONTAINER_NAME}
     privileged: true
     restart: always
     shm_size: 16g
     ipc: host
     stdin_open: true
     tty: true
-    # user: shijiashuai 去掉，和supervisord启动权限冲突
     cap_add:
       - SYS_PTRACE
     security_opt:
@@ -20,9 +19,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      # args:
-      #   - http_proxy=http://172.19.11.241:443
-      #   - https_proxy=http://172.19.11.241:443
     volumes:
       - /data:/data
       - /data1:/data1
@@ -33,9 +29,6 @@ services:
       - /lush_test:/lush_test
       - /data-lush:/data-lush
     environment:
-      - TERM=${TERM}
-      - LANG=${LANG}
+      - TERM=${TERM:-xterm-256color}
+      - LANG=${LANG:-en_US.UTF-8}
       - CONDA_DISABLE_PROGRESS_BARS=1
-    ports:
-      - "${UBUNTU_BASE_SSH_PORT}:22"
-    working_dir: /data-lush/lush-dev/shijiashuai
