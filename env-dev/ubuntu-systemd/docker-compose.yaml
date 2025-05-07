@@ -23,7 +23,7 @@ services:
     tty: true
     build:
       context: ../../
-      dockerfile: Environments/ubuntu-systemd/Dockerfile
+      dockerfile: ../ubuntu-systemd/Dockerfile
       args:
         # 用户配置
         - USER_NAME=${SYSTEMD_UBUNTU_SSH_USER}
