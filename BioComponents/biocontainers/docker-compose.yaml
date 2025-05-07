@@ -10,11 +10,13 @@ services:
       version: "1.0"
       description: "bio dev env"
     environment:
-      http_proxy: http://172.19.11.241:443
-      https_proxy: http://172.19.11.241:443
-      no_proxy: localhost,127.*,10.*,172.16.*
-    container_name: jiashuai_bio
-    hostname: bio-dev
+      - LANG=${LANG} # 使用根.env中的LANG设置
+      - TERM=${TERM} # 使用根.env中的TERM设置
+      - HTTP_PROXY=http://172.19.11.241:443 # 注意：此处的硬编码代理
+      - HTTPS_PROXY=http://172.19.11.241:443 # 注意：此处的硬编码代理
+      - NO_PROXY=localhost,127.*,10.*,172.16.*
+    container_name: ${BIOCONTAINERS_CONTAINER_NAME} # 使用变量
+    hostname: ${BIOCONTAINERS_HOSTNAME} # 使用变量
     privileged: true
     restart: no
     # shm_size: 16g
@@ -28,13 +30,13 @@ services:
     build:
       context: .
       dockerfile: Dockerfile-BioDev
-    image: jiashuai/biocontainers:1.0
+    image: ${BIOCONTAINERS_IMAGE_NAME} # 使用变量
     volumes:
       - /data/lush-dev/shijiashuai/workspace:/workspace
       - /data:/data
       - /data1:/data1
     ports:
-      - "28974:22"
+      - "${BIOCONTAINERS_SSH_PORT}:22" # 使用变量
     user: shijiashuai:lush-dev
     working_dir: /workspace
     command: ["bash"]

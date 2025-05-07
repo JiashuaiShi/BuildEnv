@@ -1,27 +1,46 @@
 #!/bin/bash
 
-# Ubuntu Development Environment Management Tool
+# Ubuntu (Systemd) Development Environment Management Tool
 # Usage: ./2-dev-cli.sh [command]
 
 # 获取脚本所在目录
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-# 获取项目根目录 (脚本目录的上三级)
+# 获取项目根目录
 PROJECT_ROOT=$(cd "$SCRIPT_DIR/../../.." &> /dev/null && pwd)
+
+# Source environment variables from .env file in the script's directory
+if [ -f "$SCRIPT_DIR/.env" ]; then
+    echo "Sourcing environment variables from $SCRIPT_DIR/.env"
+    set -a
+    source "$SCRIPT_DIR/.env"
+    set +a
+else
+    echo "Warning: $SCRIPT_DIR/.env file not found. Using default script values."
+    SYSTEMD_UBUNTU_CONTAINER_NAME="shuai-ubuntu-dev"
+    SYSTEMD_UBUNTU_IMAGE_REPO="shuai/ubuntu-dev"
+    SYSTEMD_UBUNTU_IMAGE_TAG="20250506"
+    SYSTEMD_UBUNTU_SSH_PORT="28982"
+    SYSTEMD_UBUNTU_SSH_USER="shijiashuai"
+    SYSTEMD_UBUNTU_USER_PASSWORD="phoenix2024"
+fi
 
 # Compose 文件路径 (相对于项目根目录)
 COMPOSE_FILE_REL_PATH="Environments/systemd/ubuntu-dev/docker-compose.yaml"
+COMPOSE_FILE_ABS_PATH="$PROJECT_ROOT/$COMPOSE_FILE_REL_PATH"
 
-# 容器和服务信息 (与 docker-compose.yaml 和 1-build.sh 保持一致)
-CONTAINER_NAME="shuai-ubuntu-dev"
-IMAGE_NAME="shuai/ubuntu-dev:1.0"
-SSH_PORT="28982" # Ubuntu 使用的端口
-SSH_USER="shijiashuai"
-# 注意：Ubuntu Dockerfile 默认密码是 'password', 但建议通过 SSH key 或首次登录修改
-SSH_PASSWORD="password" # 仅用于信息显示
+# 构建脚本路径
+BUILD_SCRIPT_PATH="$SCRIPT_DIR/1-build.sh"
+
+# 容器和服务信息
+CONTAINER_NAME="${SYSTEMD_UBUNTU_CONTAINER_NAME}"
+IMAGE_NAME="${SYSTEMD_UBUNTU_IMAGE_REPO}:${SYSTEMD_UBUNTU_IMAGE_TAG}"
+SSH_PORT="${SYSTEMD_UBUNTU_SSH_PORT}"
+SSH_USER="${SYSTEMD_UBUNTU_SSH_USER}"
+SSH_PASSWORD="${SYSTEMD_UBUNTU_USER_PASSWORD}"
 
 # 显示帮助信息
 show_help() {
-    echo "Ubuntu Development Environment Management Tool"
+    echo "Ubuntu (Systemd) Development Environment Management Tool"
     echo "Usage: ./2-dev-cli.sh [command]"
     echo ""
     echo "Available commands:"

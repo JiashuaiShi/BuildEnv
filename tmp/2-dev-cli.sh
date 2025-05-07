@@ -1,46 +1,44 @@
 #!/bin/bash
 
-# 统一开发环境管理工具
+# Bench Test Environment Management Tool
 # Usage: ./2-dev-cli.sh [command]
 
 # 获取脚本所在目录
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-# 获取项目根目录 (脚本目录的上三级)
-PROJECT_ROOT=$(cd "$SCRIPT_DIR/../../.." &> /dev/null && pwd)
+# 获取项目根目录 (脚本目录的上级，即 BuildEnv)
+PROJECT_ROOT=$(cd "$SCRIPT_DIR/.." &> /dev/null && pwd)
 
-# Source environment variables from .env file in the script's directory
-if [ -f "$SCRIPT_DIR/.env" ]; then
-    echo "Sourcing environment variables from $SCRIPT_DIR/.env"
+# Source environment variables from the project root .env file
+ENV_FILE="$PROJECT_ROOT/.env"
+if [ -f "$ENV_FILE" ]; then
+    echo "Sourcing environment variables from $ENV_FILE"
     set -a # Automatically export all variables subsequently defined or modified.
-    source "$SCRIPT_DIR/.env"
+    source "$ENV_FILE"
     set +a # Stop automatically exporting.
 else
-    echo "Warning: $SCRIPT_DIR/.env file not found. Using default script values or exiting."
-    # Define critical defaults or exit if .env is essential
-    UBUNTU_DEV_CONTAINER_NAME="shuai-ubuntu-dev"
-    UBUNTU_DEV_IMAGE_REPO="shuai/ubuntu-dev"
-    UBUNTU_DEV_IMAGE_TAG="20250506"
-    UBUNTU_DEV_SSH_PORT="28982"
-    UBUNTU_DEV_SSH_USER="shijiashuai"
-    UBUNTU_DEV_USER_PASSWORD="phoenix2024"
+    echo "Warning: $ENV_FILE file not found. Critical configurations might be missing."
+    # It's better to exit or have a very minimal default if .env is critical
+    # For now, we'll let it proceed, but dependent variables might be empty.
 fi
 
-# Compose 文件路径 (相对于项目根目录)
-COMPOSE_FILE_REL_PATH="Environments/ubuntu/dev/docker-compose.yaml"
+# Compose 文件路径 (相对于项目根目录 - BuildEnv)
+COMPOSE_FILE_REL_PATH="tmp/docker-compose.yaml"
 COMPOSE_FILE_ABS_PATH="$PROJECT_ROOT/$COMPOSE_FILE_REL_PATH"
 
-# 构建脚本路径
+# 构建脚本路径 (assuming it's local to tmp or user will adjust)
 BUILD_SCRIPT_PATH="$SCRIPT_DIR/1-build.sh"
 
-CONTAINER_NAME="${UBUNTU_DEV_CONTAINER_NAME}"
-IMAGE_NAME="${UBUNTU_DEV_IMAGE_REPO}:${UBUNTU_DEV_IMAGE_TAG}"
-SSH_PORT="${UBUNTU_DEV_SSH_PORT}"
-SSH_USER="${UBUNTU_DEV_SSH_USER}"
-SSH_PASSWORD="${UBUNTU_DEV_USER_PASSWORD}"
+# Use variables loaded from .env
+# Ensure these variables are defined in your .env file
+CONTAINER_NAME="${BENCH_CONTAINER_NAME}" # 来自 .env
+IMAGE_NAME="${BENCH_IMAGE_NAME}"       # 来自 .env
+SSH_PORT="${BENCH_SSH_PORT}"           # 来自 .env
+SSH_USER="shijiashuai"
+SSH_PASSWORD="phoenix2024" # 假设密码已在 Dockerfile 或 common-user-setup.sh 中设置
 
 # 显示帮助信息
 show_help() {
-    echo "Ubuntu (Supervisord) Development Environment Management Tool"
+    echo "Bench Test (Supervisord) Development Environment Management Tool"
     echo "Usage: ./2-dev-cli.sh [command]"
     echo ""
     echo "Available commands:"
@@ -102,7 +100,7 @@ start_container() {
         echo "  Switch to JDK 17: jdk17"
         echo "  Check current version: jdk"
         echo ""
-        echo "Development Features (Supervisord based):"
+        echo "Development Features (Supervisord based - Bench Test Environment):"
         echo "  1. C++ (GCC-13, Clang), Java (8/11/17), Python (Miniconda), etc."
         echo "  2. Managed by Supervisord (sshd)"
         echo ""

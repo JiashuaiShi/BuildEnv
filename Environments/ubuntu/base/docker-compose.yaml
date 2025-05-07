@@ -1,11 +1,11 @@
 services:
   shuai-ubuntu:
-    image: shuai/ubuntu:1.0
-    container_name: shuai-ubuntu
+    image: ${UBUNTU_BASE_IMAGE_NAME}
+    container_name: ${UBUNTU_BASE_CONTAINER_NAME}
     labels:
       - "maintainer=shijiashuai"
       - "description=ubuntu 20.04 base"
-    hostname: shuai-ubuntu
+    hostname: ${UBUNTU_BASE_HOSTNAME}
     privileged: true
     restart: always
     shm_size: 16g
@@ -33,9 +33,9 @@ services:
       - /lush_test:/lush_test
       - /data-lush:/data-lush
     environment:
-      - TERM=xterm-256color
-      - LANG=en_US.UTF-8
+      - TERM=${TERM}
+      - LANG=${LANG}
       - CONDA_DISABLE_PROGRESS_BARS=1
     ports:
-      - "28963:22"
+      - "${UBUNTU_BASE_SSH_PORT}:22"
     working_dir: /data-lush/lush-dev/shijiashuai

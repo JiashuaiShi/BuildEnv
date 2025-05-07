@@ -1,11 +1,11 @@
 services:
   shuai-ubuntu-dev:
-    image: shuai/ubuntu-dev:1.0
-    container_name: shuai-ubuntu-dev
+    image: ${SYSTEMD_UBUNTU_IMAGE_REPO}:${SYSTEMD_UBUNTU_IMAGE_TAG}
+    container_name: ${SYSTEMD_UBUNTU_CONTAINER_NAME}
     labels:
       - "maintainer=shijiashuai"
       - "description=Ubuntu base systemd with dev tools"
-    hostname: shuai-ubuntu-dev
+    hostname: ${SYSTEMD_UBUNTU_CONTAINER_NAME}
     restart: always
     pid: "host"
     network_mode: "host"
@@ -21,17 +21,16 @@ services:
       - seccomp:unconfined
     stdin_open: true
     tty: true
-    user: shijiashuai
     build:
       context: ../../..
       dockerfile: Environments/systemd/ubuntu-dev/Dockerfile
       args:
         # 用户配置
-        - USER_NAME=shijiashuai
+        - USER_NAME=${SYSTEMD_UBUNTU_SSH_USER}
         - USER_ID=2034
         - GROUP_NAME=lush-dev
         - GROUP_ID=2000
-        - USER_PASSWORD=phoenix2024
+        - USER_PASSWORD=${SYSTEMD_UBUNTU_USER_PASSWORD}
         #   - http_proxy=${HTTP_PROXY}
         #   - https_proxy=${HTTPS_PROXY}
     volumes:
@@ -46,10 +45,10 @@ services:
       - /lush_test:/lush_test
       - /data-lush:/data-lush
     environment:
-      - TERM=xterm-256color
-      - LANG=zh_CN.UTF-8
+      - TERM=${TERM}
+      - LANG=${LANG}
       - CONDA_DISABLE_PROGRESS_BARS=1
     ports:
-      - "28982:22"
+      - "${SYSTEMD_UBUNTU_SSH_PORT}:22"
     working_dir: /data-lush/lush-dev/shijiashuai
     stop_signal: SIGRTMIN+3

@@ -1,11 +1,11 @@
 services:
   shuai-alma-dev:
-    image: shuai/alma-dev:20250506
-    container_name: shuai-alma-dev
+    image: ${ALMA9_IMAGE_REPO}:${ALMA9_IMAGE_TAG}
+    container_name: ${ALMA9_CONTAINER_NAME}
     labels:
       - "maintainer=shijiashuai"
       - "description=AlmaLinux 9 base (Supervisord) with dev tools"
-    hostname: shuai-alma-dev
+    hostname: ${ALMA9_CONTAINER_NAME}
     restart: always
     pid: "host"
     network_mode: "host"
@@ -24,11 +24,11 @@ services:
       dockerfile: Environments/alma9/Dockerfile
       args:
         # 用户配置
-        - USER_NAME=shijiashuai
+        - USER_NAME=${ALMA9_SSH_USER}
         - USER_ID=2034
         - GROUP_NAME=lush-dev
         - GROUP_ID=2000
-        - USER_PASSWORD=phoenix2024
+        - USER_PASSWORD=${ALMA9_USER_PASSWORD}
         #   - http_proxy=${HTTP_PROXY}
         #   - https_proxy=${HTTPS_PROXY}
     volumes:
@@ -42,10 +42,10 @@ services:
       - /lush_test:/lush_test
       - /data-lush:/data-lush
     environment:
-      - TERM=xterm-256color
-      - LANG=en_US.UTF-8
+      - TERM=${TERM}
+      - LANG=${LANG}
       - CONDA_DISABLE_PROGRESS_BARS=1
-      - SSH_PASSWORD=phoenix2024
+      - SSH_PASSWORD=${ALMA9_USER_PASSWORD}
     ports:
-      - "28981:22"
+      - "${ALMA9_SSH_PORT}:22"
     working_dir: /data-lush/lush-dev/shijiashuai

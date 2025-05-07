@@ -1,18 +1,46 @@
 #!/bin/bash
 
-# AlmaLinux 9 Development Environment Management Tool
+# AlmaLinux 9 (Systemd) Development Environment Management Tool
 # Usage: ./2-dev-cli.sh [command]
 
-# 容器和服务信息 (与 docker-compose.yaml 和 1-build.sh 保持一致)
-CONTAINER_NAME="shuai-alma-dev"
-IMAGE_NAME="shuai/alma-dev:20250506"
-SSH_PORT="28981"
-SSH_USER="shijiashuai"
-SSH_PASSWORD="phoenix2024"
+# 获取脚本所在目录
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+# 获取项目根目录
+PROJECT_ROOT=$(cd "$SCRIPT_DIR/../../.." &> /dev/null && pwd)
+
+# Source environment variables from .env file in the script's directory
+if [ -f "$SCRIPT_DIR/.env" ]; then
+    echo "Sourcing environment variables from $SCRIPT_DIR/.env"
+    set -a
+    source "$SCRIPT_DIR/.env"
+    set +a
+else
+    echo "Warning: $SCRIPT_DIR/.env file not found. Using default script values."
+    SYSTEMD_ALMA9_CONTAINER_NAME="shuai-alma-dev"
+    SYSTEMD_ALMA9_IMAGE_REPO="shuai/alma-dev"
+    SYSTEMD_ALMA9_IMAGE_TAG="20250506"
+    SYSTEMD_ALMA9_SSH_PORT="28981"
+    SYSTEMD_ALMA9_SSH_USER="shijiashuai"
+    SYSTEMD_ALMA9_USER_PASSWORD="phoenix2024"
+fi
+
+# Compose 文件路径 (相对于项目根目录)
+COMPOSE_FILE_REL_PATH="Environments/systemd/alma9-dev/docker-compose.yaml"
+COMPOSE_FILE_ABS_PATH="$PROJECT_ROOT/$COMPOSE_FILE_REL_PATH"
+
+# 构建脚本路径
+BUILD_SCRIPT_PATH="$SCRIPT_DIR/1-build.sh"
+
+# 容器和服务信息
+CONTAINER_NAME="${SYSTEMD_ALMA9_CONTAINER_NAME}"
+IMAGE_NAME="${SYSTEMD_ALMA9_IMAGE_REPO}:${SYSTEMD_ALMA9_IMAGE_TAG}"
+SSH_PORT="${SYSTEMD_ALMA9_SSH_PORT}"
+SSH_USER="${SYSTEMD_ALMA9_SSH_USER}"
+SSH_PASSWORD="${SYSTEMD_ALMA9_USER_PASSWORD}"
 
 # 显示帮助信息
 show_help() {
-    echo "AlmaLinux 9 Development Environment Management Tool"
+    echo "AlmaLinux 9 (Systemd) Development Environment Management Tool"
     echo "Usage: ./2-dev-cli.sh [command]"
     echo ""
     echo "Available commands:"

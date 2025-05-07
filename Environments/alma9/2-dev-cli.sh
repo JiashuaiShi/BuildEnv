@@ -3,12 +3,31 @@
 # AlmaLinux 9 (Supervisord) Development Environment Management Tool
 # Usage: ./2-dev-cli.sh [command]
 
-# 容器和服务信息 (与 docker-compose.yaml 保持一致)
-CONTAINER_NAME="shuai-alma-dev"
-IMAGE_NAME="shuai/alma-dev:20250506"
-SSH_PORT="28981"
-SSH_USER="shijiashuai"
-SSH_PASSWORD="phoenix2024" # 假设密码已在统一脚本中设置
+# Get script directory to source .env file reliably
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+# Source environment variables from .env file in the script's directory
+if [ -f "$SCRIPT_DIR/.env" ]; then
+    echo "Sourcing environment variables from $SCRIPT_DIR/.env"
+    set -a
+    source "$SCRIPT_DIR/.env"
+    set +a
+else
+    echo "Warning: $SCRIPT_DIR/.env file not found. Using default script values."
+    ALMA9_CONTAINER_NAME="shuai-alma-dev"
+    ALMA9_IMAGE_REPO="shuai/alma-dev"
+    ALMA9_IMAGE_TAG="20250506"
+    ALMA9_SSH_PORT="28981"
+    ALMA9_SSH_USER="shijiashuai"
+    ALMA9_USER_PASSWORD="phoenix2024"
+fi
+
+# 容器和服务信息 (与 docker-compose.yaml 和 .env 保持一致)
+CONTAINER_NAME="${ALMA9_CONTAINER_NAME}"
+IMAGE_NAME="${ALMA9_IMAGE_REPO}:${ALMA9_IMAGE_TAG}"
+SSH_PORT="${ALMA9_SSH_PORT}"
+SSH_USER="${ALMA9_SSH_USER}"
+SSH_PASSWORD="${ALMA9_USER_PASSWORD}" # 假设密码已在统一脚本中设置
 
 # 显示帮助信息
 show_help() {

@@ -10,11 +10,13 @@ services:
       version: "1.0"
       description: "bioconductor"
     environment:
-      http_proxy: http://172.19.11.241:443
-      https_proxy: http://172.19.11.241:443
-      no_proxy: localhost,127.*,10.*,172.16.*
-    container_name: jiashuai_biodev
-    hostname: bioconductor
+      - LANG=${LANG} # 使用根.env中的LANG设置
+      - TERM=${TERM} # 使用根.env中的TERM设置
+      - HTTP_PROXY=http://172.19.11.241:443 # 注意：此处的硬编码代理
+      - HTTPS_PROXY=http://172.19.11.241:443 # 注意：此处的硬编码代理
+      - NO_PROXY=localhost,127.*,10.*,172.16.*
+    container_name: ${BIOCONDUCTOR_CONTAINER_NAME}
+    hostname: ${BIOCONDUCTOR_HOSTNAME}
     privileged: true
     restart: no
     # shm_size: 16g
@@ -28,13 +30,13 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: jiashuai/bioconductor:1.0
+    image: ${BIOCONDUCTOR_IMAGE_NAME}
     volumes:
       - /data/lush-dev/shijiashuai/workspace:/workspace
       - /data:/data
       - /data1:/data1
     ports:
-      - "28975:22"
+      - "${BIOCONDUCTOR_SSH_PORT}:22"
     user: shijiashuai:lush-dev
     working_dir: /workspace
     command: ["bash"]

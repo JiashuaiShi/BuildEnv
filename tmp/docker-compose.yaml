@@ -1,11 +1,11 @@
 services:
-  shuai-ubuntu-dev:
-    image: ${UBUNTU_DEV_IMAGE_REPO}:${UBUNTU_DEV_IMAGE_TAG}
-    container_name: ${UBUNTU_DEV_CONTAINER_NAME}
+  shuai-bench-test:
+    image: ${BENCH_IMAGE_NAME}
+    container_name: ${BENCH_CONTAINER_NAME}
     labels:
       - "maintainer=shijiashuai"
       - "description=ubuntu dev environment (supervisord)"
-    hostname: ${UBUNTU_DEV_CONTAINER_NAME}
+    hostname: ${BENCH_CONTAINER_NAME}
     restart: always
     pid: "host"
     network_mode: "host"
@@ -18,17 +18,16 @@ services:
       - seccomp:unconfined
     stdin_open: true
     tty: true
-    # user: shijiashuai
     build:
       context: .
       dockerfile: Dockerfile
       args:
         # 用户配置
-        - USER_NAME=${UBUNTU_DEV_SSH_USER}
+        - USER_NAME=shijiashuai
         - USER_ID=2034
         - GROUP_NAME=lush-dev
         - GROUP_ID=2000
-        - USER_PASSWORD=${UBUNTU_DEV_USER_PASSWORD}
+        - USER_PASSWORD=phoenix2024
         #   - http_proxy=${HTTP_PROXY}
         #   - https_proxy=${HTTPS_PROXY}
     volumes:
@@ -46,5 +45,5 @@ services:
       - LANG=${LANG}
       - CONDA_DISABLE_PROGRESS_BARS=1
     ports:
-      - "${UBUNTU_DEV_SSH_PORT}:22"
+      - "${BENCH_SSH_PORT}:22"
     working_dir: /data-lush/lush-dev/shijiashuai
