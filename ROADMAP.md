@@ -1,33 +1,33 @@
-# Development Roadmap and TODO List
+# 开发路线图与 TODO 列表
 
-## Phase 1: Environment Standardization and Enhancements
+## 阶段一：环境标准化与增强
 
-1.  **Unify Build Configurations:**
-    *   Review and standardize build configurations across all modules (`alma9`, `ubuntu/dev`, `systemd/*`, etc.).
-    *   Eliminate unnecessary differences in Dockerfiles and `docker-compose.yaml` files.
-    *   Ensure consistent use of base images, user setups, and common scripts.
+1.  **统一构建配置：**
+    *   审查并标准化所有模块（`alma9`、`ubuntu/dev`、`systemd/*` 等）的构建配置。
+    *   消除 Dockerfile 和 `docker-compose.yaml` 文件中不必要的差异。
+    *   确保基础镜像、用户设置和通用脚本的一致使用。
 
-2.  **Improve Password Management:**
-    *   Remove hardcoded passwords from scripts (`2-dev-cli.sh`) and `docker-compose.yaml` environment variables.
-    *   Investigate and implement a more secure method for managing secrets/passwords in development environments (e.g., using `.env` files with gitignore, or exploring Docker secrets if appropriate for the dev setup).
+2.  **改进密码管理：**
+    *   从脚本（`2-dev-cli.sh`）和 `docker-compose.yaml` 环境变量中移除硬编码的密码。
+    *   研究并实施更安全的方法来管理开发环境中的秘密/密码（例如，使用带有 gitignore 的 `.env` 文件，或在开发设置适宜的情况下探索 Docker secrets）。
 
-3.  **Enhance Chinese Language Support:**
-    *   **Fonts:** Research and integrate better, more comprehensive Chinese font packages into the base images to ensure proper display of all CJK characters in terminal and potential GUI applications.
-    *   **Locale:** Verify `LANG=zh_CN.UTF-8` and `LC_ALL=zh_CN.UTF-8` are consistently applied and effective.
+3.  **增强中文语言支持：**
+    *   **字体：** 研究并将更好、更全面的中文字体包集成到基础镜像中，以确保在终端和潜在的 GUI 应用中正确显示所有 CJK 字符。
+    *   **区域设置：** 验证 `LANG=zh_CN.UTF-8` 和 `LC_ALL=zh_CN.UTF-8` 是否得到一致有效的应用。
 
-4.  **Optimize APT/DNF Repository Configuration:**
-    *   **Mirror Usage:** Standardize the use of reliable Chinese mirror sources (e.g., Aliyun, TUNA) for APT (Ubuntu) and DNF (AlmaLinux) to improve download speeds.
-    *   **GPG Key Issues:** Investigate and resolve any recurring GPG key validation errors during package installation. Ensure all keys for mirrors are correctly imported and trusted.
+4.  **优化 APT/DNF 仓库配置：**
+    *   **镜像源使用：** 标准化使用可靠的中国镜像源（如阿里云、清华大学 TUNA）为 APT (Ubuntu) 和 DNF (AlmaLinux) 加快下载速度。
+    *   **GPG 密钥问题：** 调查并解决软件包安装过程中反复出现的 GPG 密钥验证错误。确保镜像源的所有密钥都已正确导入并受到信任。
 
-## Phase 2: Expanding Development Capabilities
+## 阶段二：扩展开发能力
 
-5.  **Broaden Environment Support:**
-    *   **Frontend Development:** Add support for common frontend development tools and runtimes (e.g., Node.js, npm/yarn, browser debugging tools if feasible within a containerized setup).
-    *   **Other Languages/Frameworks:** Consider adding pre-configured environments for other languages or frameworks based on anticipated needs.
+5.  **拓宽环境支持：**
+    *   **前端开发：** 为常见的前端开发工具和运行时（如 Node.js、npm/yarn，以及在容器化设置中可行的浏览器调试工具）添加支持。
+    *   **其他语言/框架：** 根据预期需求，考虑为其他语言或框架添加预配置环境。
 
-## Future Considerations / Ideas
+## 未来考虑 / 设想
 
-*   **IDE Integration:** Improve and document IDE integration (VSCode Dev Containers, CLion remote dev) for a smoother developer experience.
-*   **Testing Frameworks:** Integrate common testing frameworks relevant to the supported languages.
-*   **Performance Optimization:** Continuously review and optimize image build times and container startup times.
-*   **Documentation:** Keep all README files and the ROADMAP updated. 
+*   **IDE 集成：** 改进并记录 IDE 集成（VSCode Dev Containers、CLion 远程开发），以提供更流畅的开发者体验。
+*   **测试框架：** 集成与所支持语言相关的常用测试框架。
+*   **性能优化：** 持续审查并优化镜像构建时间和容器启动时间。
+*   **文档维护：** 保持所有 README 文件和路线图（ROADMAP）的更新。 
