@@ -7,15 +7,32 @@
 # Pull base image.
 FROM ubuntu:noble
 
-# Set Non-interactive Frontend
-ENV DEBIAN_FRONTEND=noninteractive
+# --- ARGs for build-time configuration ---
+ARG LANG=en_US.UTF-8
+ARG TERM=xterm-256color
+ARG http_proxy
+ARG https_proxy
+ARG no_proxy
 
-# Set Locale
-ENV LANG=C.UTF-8
-ENV LC_ALL=C.UTF-8
+# Set Non-interactive Frontend & Locale ENV vars using ARGs
+ENV DEBIAN_FRONTEND=noninteractive \
+    LANG=${LANG} \
+    LC_ALL=${LANG} \
+    TERM=${TERM} \
+    # Set proxies for subsequent RUN commands if ARGs are passed
+    HTTP_PROXY=${http_proxy} \
+    HTTPS_PROXY=${https_proxy} \
+    NO_PROXY=${no_proxy}
 
 # Install systemd, essential dev tools, and dependencies.
-RUN apt-get update \
+RUN \
+    if [ -n "${http_proxy}" ]; then \
+        echo "Acquire::http::Proxy \"${http_proxy}\";" > /etc/apt/apt.conf.d/80proxy; \
+    fi; \
+    if [ -n "${https_proxy}" ]; then \
+        echo "Acquire::https::Proxy \"${https_proxy}\";" >> /etc/apt/apt.conf.d/80proxy; \
+    fi; \
+    apt-get update \
     && apt-get install -y --no-install-recommends \
        systemd \
        sudo \
@@ -26,10 +43,12 @@ RUN apt-get update \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
     # Configure Locale
-    && sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen \
-    && echo 'LANG="en_US.UTF-8"'>/etc/default/locale \
+    && sed -i -e "s/# ${LANG}/${LANG}/" /etc/locale.gen \
+    && echo "LANG=\"${LANG}\"" > /etc/default/locale \
     && dpkg-reconfigure --frontend=noninteractive locales \
-    && update-locale LANG=en_US.UTF-8
+    && update-locale LANG=${LANG} \
+    # Clean up proxy configuration
+    && rm -f /etc/apt/apt.conf.d/80proxy
 
 # Mask services that don't make sense in containers or cause issues.
 # https://github.com/systemd/systemd/issues/6237
