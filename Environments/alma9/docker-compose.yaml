@@ -1,14 +1,21 @@
 services:
   shuai-alma-dev:
-    image: shuai/alma-dev:1.0
+    image: shuai/alma-dev:20250506
     container_name: shuai-alma-dev
     labels:
       - "maintainer=shijiashuai"
       - "description=AlmaLinux 9 base (Supervisord) with dev tools"
     hostname: shuai-alma-dev
     restart: always
+    pid: "host"
+    network_mode: "host"
+    privileged: true
     shm_size: 16g
     ipc: host
+    cap_add:
+      - ALL
+    security_opt:
+      - seccomp:unconfined
     stdin_open: true
     tty: true
     build:
@@ -22,6 +29,7 @@ services:
         - GROUP_ID=2000
         - USER_PASSWORD=phoenix2024
     volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
       - /data:/data
       - /data1:/data1
       - /data2:/data2
