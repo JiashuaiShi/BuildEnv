@@ -1,24 +1,35 @@
 services:
   shuai-ubuntu-dev:
-    image: shuai/ubuntu-dev:1.0
+    image: shuai/ubuntu-dev:20250506
     container_name: shuai-ubuntu-dev
     labels:
       - "maintainer=shijiashuai"
       - "description=ubuntu dev environment (supervisord)"
     hostname: shuai-ubuntu-dev
     restart: always
+    pid: "host"
+    network_mode: "host"
+    privileged: true
     shm_size: 16g
     ipc: host
+    cap_add:
+      - ALL
+    security_opt:
+      - seccomp:unconfined
     stdin_open: true
     tty: true
     build:
       context: .
       dockerfile: Dockerfile
       args:
-        - TERM=xterm-256color
-        - LANG=en_US.UTF-8
-        - CONDA_DISABLE_PROGRESS_BARS=1
+        # 用户配置
+        - USER_NAME=shijiashuai
+        - USER_ID=2034
+        - GROUP_NAME=lush-dev
+        - GROUP_ID=2000
+        - USER_PASSWORD=phoenix2024
     volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
       - /data:/data
       - /data1:/data1
       - /data2:/data2
@@ -27,6 +38,10 @@ services:
       - /data-melody:/data-melody
       - /lush_test:/lush_test
       - /data-lush:/data-lush
+    environment:
+      - TERM=xterm-256color
+      - LANG=zh_CN.UTF-8
+      - CONDA_DISABLE_PROGRESS_BARS=1
     ports:
       - "28982:22"
     working_dir: /data-lush/lush-dev/shijiashuai
