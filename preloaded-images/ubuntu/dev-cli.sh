@@ -18,26 +18,30 @@ if [ -f "$ENV_FILE" ]; then
 else
     echo "Warning: $ENV_FILE file not found. Using default script values."
     # Define critical defaults or exit if .env is essential
-    UBUNTU_DEV_CONTAINER_NAME="shuai-ubuntu-dev-tmp" # Default, match .env
-    UBUNTU_DEV_IMAGE_NAME="shuai/ubuntu-dev:20250506" # Default, match .env
-    UBUNTU_DEV_SSH_PORT="28983"               # Default, match .env
-    UBUNTU_DEV_SSH_USER="shijiashuai"
-    UBUNTU_DEV_USER_PASSWORD="phoenix2024"
+    UBUNTU_CONTAINER_NAME="shuai-ubuntu-tmp" # Default, match .env
+    UBUNTU_IMAGE_NAME="shuai/ubuntu:20250506" # Default, match .env, updated to actual image
+    UBUNTU_SSH_PORT="28983"               # Default, match .env
+    UBUNTU_SSH_USER="shijiashuai"
+    UBUNTU_USER_PASSWORD="phoenix2024"
 fi
 
 # Compose 文件路径 (相对于项目根目录 - BuildEnv)
-COMPOSE_FILE_REL_PATH="tmp/ubuntu-dev/docker-compose.yaml"
-COMPOSE_FILE_ABS_PATH="$PROJECT_ROOT/$COMPOSE_FILE_REL_PATH"
+# SCRIPT_DIR 是脚本的绝对路径, e.g., /path/to/BuildEnv/tmp/ubuntu
+# PROJECT_ROOT 是 /path/to/BuildEnv
+# 我们希望 COMPOSE_FILE_REL_PATH 是相对于 PROJECT_ROOT 的路径
+# 所以应该是 "tmp/ubuntu/docker-compose.yaml"
+COMPOSE_FILE_REL_PATH="${SCRIPT_DIR#$PROJECT_ROOT/}/docker-compose.yaml"
+COMPOSE_FILE_ABS_PATH="$SCRIPT_DIR/docker-compose.yaml" # 更简洁，直接使用脚本目录下的
 
 # 构建脚本路径 (assuming it's local or user will adjust)
-BUILD_SCRIPT_PATH="$SCRIPT_DIR/1-build.sh"
+BUILD_SCRIPT_PATH="$SCRIPT_DIR/1-build.sh" # 假设 1-build.sh 在同一目录
 
 # Use variables loaded from the local .env
-CONTAINER_NAME="${UBUNTU_DEV_CONTAINER_NAME}"
-IMAGE_NAME="${UBUNTU_DEV_IMAGE_NAME}"
-SSH_PORT="${UBUNTU_DEV_SSH_PORT}"
-SSH_USER="${UBUNTU_DEV_SSH_USER}"
-SSH_PASSWORD="${UBUNTU_DEV_USER_PASSWORD}"
+CONTAINER_NAME="${UBUNTU_CONTAINER_NAME}"
+IMAGE_NAME="${UBUNTU_IMAGE_NAME}"
+SSH_PORT="${UBUNTU_SSH_PORT}"
+SSH_USER="${UBUNTU_SSH_USER}"
+SSH_PASSWORD="${UBUNTU_USER_PASSWORD}"
 
 # 显示帮助信息
 show_help() {
