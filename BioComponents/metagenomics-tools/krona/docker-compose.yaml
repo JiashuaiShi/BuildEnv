@@ -6,13 +6,13 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        - http_proxy=http://172.19.11.241:443
-        - https_proxy=http://172.19.11.241:443
-    image: krona
-    container_name: krona_container
+        LANG: ${LANG:-C.UTF-8}
+        TERM: ${TERM:-xterm-256color}
+        http_proxy: "${http_proxy}"
+        https_proxy: "${https_proxy}"
+        no_proxy: "${no_proxy}"
+    image: ${BIO_METAGENOMICS_KRONA_IMAGE_REPO:-my-repo/krona-tool}:${BIO_METAGENOMICS_KRONA_IMAGE_TAG:-2.8.1}
+    container_name: ${BIO_METAGENOMICS_KRONA_CONTAINER_NAME:-krona-tool-runner}
+    env_file:
+      - .env
     command: ktImportTaxonomy
-volumes:
-  scripts:
-    driver: local
-  data:
-    driver: local
