@@ -1,19 +1,21 @@
 version: '3.8'
 
 services:
-  combined_analysis:
+  r-analysis:
     build:
       context: .
       dockerfile: Dockerfile
-    image: r_combined_analysis
-    container_name: r_analysis_container
-    command: Rscript
+      args:
+        LANG: ${LANG:-C.UTF-8}
+        TERM: ${TERM:-xterm-256color}
+        http_proxy: "${http_proxy}"
+        https_proxy: "${https_proxy}"
+        no_proxy: "${no_proxy}"
+    image: ${BIO_METAGENOMICS_RANALYSIS_IMAGE_REPO:-my-repo/r-analysis-tool}:${BIO_METAGENOMICS_RANALYSIS_IMAGE_TAG:-latest}
+    container_name: ${BIO_METAGENOMICS_RANALYSIS_CONTAINER_NAME:-r-analysis-tool-runner}
+    env_file:
+      - .env
     volumes:
       - ./scripts:/scripts
       - ./data:/data
-
-volumes:
-  scripts:
-    driver: local
-  data:
-    driver: local
+    working_dir: /data
