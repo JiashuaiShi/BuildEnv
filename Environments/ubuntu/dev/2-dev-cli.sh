@@ -16,7 +16,7 @@ COMPOSE_FILE_ABS_PATH="$PROJECT_ROOT/$COMPOSE_FILE_REL_PATH"
 BUILD_SCRIPT_PATH="$SCRIPT_DIR/1-build.sh"
 
 CONTAINER_NAME="shuai-ubuntu-dev" # 与 docker-compose.yaml 保持一致
-IMAGE_NAME="shuai/ubuntu-dev:1.0" # 与 docker-compose.yaml 保持一致
+IMAGE_NAME="shuai/ubuntu-dev:20250506" # 与 docker-compose.yaml 保持一致
 SSH_PORT="28982" # 与 docker-compose.yaml 保持一致
 SSH_USER="shijiashuai"
 SSH_PASSWORD="phoenix2024" # 假设密码已在 Dockerfile 或 common-user-setup.sh 中设置
