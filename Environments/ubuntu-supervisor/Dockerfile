@@ -73,8 +73,10 @@ RUN apt-get install -y --no-install-recommends \
     supervisor \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# --- Run Unified Common Setup Script ---
-COPY scripts/unified-common-setup.sh /tmp/
+# --- Run Unified Common User Setup Script ---
+# This script handles: installing base tools (sudo, zsh, sshd, supervisor, etc.),
+# creating user/group, configuring SSH & sudo, creating base directories
+COPY common/docker-setup-scripts/unified-common-setup.sh /tmp/
 RUN chmod +x /tmp/unified-common-setup.sh && \
     export SETUP_MODE=${SETUP_MODE} && \
     /tmp/unified-common-setup.sh && \
@@ -224,7 +226,7 @@ RUN apt-get update -o Acquire::Check-Valid-Until=false -o Acquire::Check-Date=fa
     apt-get clean || true
 
 # 配置 supervisor (基础目录已由脚本创建)
-COPY Environments/ubuntu/dev/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+COPY Environments/ubuntu-supervisor/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 RUN chmod 644 /etc/supervisor/conf.d/supervisord.conf
 
 # SSH服务安装和配置 (已由脚本完成)
@@ -361,4 +363,4 @@ USER root
 EXPOSE 22
 
 # 启动 supervisord
-CMD ["/usr/bin/supervisord", "-n", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+CMD ["/usr/bin/supervisord", "-n", "-c", "/etc/supervisor/conf.d/supervisord.conf"] 

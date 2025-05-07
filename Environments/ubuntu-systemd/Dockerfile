@@ -58,8 +58,10 @@ RUN apt-get update
 # --- Unified Setup Script Handles Base Packages, User/Group, Sudo --- #
 # REMOVED redundant package installs and user setup here
 
-# --- Run Unified Common User Setup Script --- #
-COPY scripts/unified-common-setup.sh /tmp/
+# --- Run Unified Common User Setup Script ---
+# This script handles: installing base tools (sudo, zsh, sshd, etc.),
+# creating user/group, configuring SSH & sudo, creating base directories
+COPY common/docker-setup-scripts/unified-common-setup.sh /tmp/
 RUN chmod +x /tmp/unified-common-setup.sh && \
     export SETUP_MODE=${SETUP_MODE} && \
     /tmp/unified-common-setup.sh && \
@@ -196,7 +198,7 @@ RUN echo "deb https://repo.scala-sbt.org/scalasbt/debian all main" | tee /etc/ap
 #################################################
 # 工具配置部分
 #################################################
-COPY --chown=root:root Environments/systemd/ubuntu-dev/jdk_switcher.sh /usr/local/bin/jdk
+COPY --chown=root:root Environments/ubuntu-systemd/jdk_switcher.sh /usr/local/bin/jdk
 RUN chmod +x /usr/local/bin/jdk
 
 #################################################

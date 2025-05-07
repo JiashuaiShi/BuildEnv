@@ -168,4 +168,4 @@ else
     echo "Skipping Supervisor directory setup for systemd mode."
 fi
 
-echo "Unified common setup script completed (Mode: ${SETUP_MODE})."
+echo "Unified common setup script completed (Mode: ${SETUP_MODE})." 

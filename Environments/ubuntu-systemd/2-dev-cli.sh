@@ -6,7 +6,7 @@
 # 获取脚本所在目录
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 # 获取项目根目录
-PROJECT_ROOT=$(cd "$SCRIPT_DIR/../../.." &> /dev/null && pwd)
+PROJECT_ROOT=$(cd "$SCRIPT_DIR/../.." &> /dev/null && pwd)
 
 # Source environment variables from .env file in the script's directory
 if [ -f "$SCRIPT_DIR/.env" ]; then
@@ -25,7 +25,7 @@ else
 fi
 
 # Compose 文件路径 (相对于项目根目录)
-COMPOSE_FILE_REL_PATH="Environments/systemd/ubuntu-dev/docker-compose.yaml"
+COMPOSE_FILE_REL_PATH="Environments/ubuntu-systemd/docker-compose.yaml"
 COMPOSE_FILE_ABS_PATH="$PROJECT_ROOT/$COMPOSE_FILE_REL_PATH"
 
 # 构建脚本路径
@@ -88,7 +88,7 @@ build_container() {
 
 # 启动容器 (直接使用 docker-compose up)
 start_container() {
-    echo "Starting container ${CONTAINER_NAME}..."
+    echo "Starting container ${CONTAINER_NAME} from ${COMPOSE_FILE_ABS_PATH}..."
 
     # 添加内核版本检查
     check_kernel_version
@@ -99,7 +99,7 @@ start_container() {
         exit 1
     fi
 
-    if docker-compose up -d; then
+    if (cd "$PROJECT_ROOT" && docker-compose -f "$COMPOSE_FILE_REL_PATH" up -d); then
         echo "Waiting for container services (like SSH)..."
         sleep 8
 
@@ -135,20 +135,20 @@ start_container() {
 
 # 停止容器 (使用 docker-compose stop)
 stop_container() {
-    echo "Stopping container ${CONTAINER_NAME}..."
-    docker-compose stop
+    echo "Stopping container ${CONTAINER_NAME} using ${COMPOSE_FILE_ABS_PATH}..."
+    (cd "$PROJECT_ROOT" && docker-compose -f "$COMPOSE_FILE_REL_PATH" stop)
 }
 
 # 停止并删除容器 (使用 docker-compose down)
 down_container() {
-    echo "Stopping and removing container ${CONTAINER_NAME}..."
-    docker-compose down --remove-orphans
+    echo "Stopping and removing container ${CONTAINER_NAME} using ${COMPOSE_FILE_ABS_PATH}..."
+    (cd "$PROJECT_ROOT" && docker-compose -f "$COMPOSE_FILE_REL_PATH" down --remove-orphans)
 }
 
 # 重启容器 (使用 docker-compose restart)
 restart_container() {
-    echo "Restarting container ${CONTAINER_NAME}..."
-    docker-compose restart
+    echo "Restarting container ${CONTAINER_NAME} using ${COMPOSE_FILE_ABS_PATH}..."
+    (cd "$PROJECT_ROOT" && docker-compose -f "$COMPOSE_FILE_REL_PATH" restart)
     echo "Waiting for SSH service..."
     sleep 5
     echo "Container restarted. Use './2-dev-cli.sh ssh' to connect."
@@ -162,26 +162,20 @@ ssh_to_container() {
 
 # 显示容器状态 (使用 docker-compose ps)
 show_status() {
-    echo "Container status:"
-    docker-compose ps
+    echo "Container status (using ${COMPOSE_FILE_ABS_PATH}):"
+    (cd "$PROJECT_ROOT" && docker-compose -f "$COMPOSE_FILE_REL_PATH" ps)
 }
 
 # 显示容器日志 (使用 docker-compose logs)
 show_logs() {
-    echo "Container logs for ${CONTAINER_NAME}:"
-    docker-compose logs --follow
+    echo "Container logs for ${CONTAINER_NAME} (using ${COMPOSE_FILE_ABS_PATH}):"
+    (cd "$PROJECT_ROOT" && docker-compose -f "$COMPOSE_FILE_REL_PATH" logs --follow)
 }
 
 # 清理容器和镜像
 clean_container() {
-    echo "Cleaning container ${CONTAINER_NAME} and image ${IMAGE_NAME}..."
-    docker-compose down --remove-orphans 2>/dev/null || true
-    if docker image inspect ${IMAGE_NAME} &> /dev/null; then
-        echo "Removing image ${IMAGE_NAME}..."
-        docker rmi ${IMAGE_NAME} 2>/dev/null || echo "Failed to remove image ${IMAGE_NAME}. It might be in use."
-    else
-        echo "Image ${IMAGE_NAME} not found."
-    fi
+    echo "Cleaning environment defined in ${COMPOSE_FILE_ABS_PATH}..."
+    (cd "$PROJECT_ROOT" && docker-compose -f "$COMPOSE_FILE_REL_PATH" down --volumes --remove-orphans --rmi all 2>/dev/null || echo "Cleanup finished, some resources might remain.")
     echo "Cleanup attempt finished."
 }
 
@@ -198,8 +192,8 @@ exec_in_container() {
 
 # 主函数
 main() {
-    # 切换到脚本所在目录，确保 docker-compose 能找到文件
-    cd "$SCRIPT_DIR" || exit 1
+    # 不再需要 cd "$SCRIPT_DIR"，因为所有 docker-compose 命令都 cd 到 PROJECT_ROOT
+    # cd "$SCRIPT_DIR" || exit 1
 
     case "$1" in
         build)

@@ -1,18 +1,15 @@
 services:
-  shuai-alma-dev:
-    image: ${SYSTEMD_ALMA9_IMAGE_REPO}:${SYSTEMD_ALMA9_IMAGE_TAG}
-    container_name: ${SYSTEMD_ALMA9_CONTAINER_NAME}
+  shuai-ubuntu-dev:
+    image: ${UBUNTU_DEV_IMAGE_REPO}:${UBUNTU_DEV_IMAGE_TAG}
+    container_name: ${UBUNTU_DEV_CONTAINER_NAME}
     labels:
       - "maintainer=shijiashuai"
-      - "description=AlmaLinux 9 base systemd with dev tools"
-    hostname: ${SYSTEMD_ALMA9_CONTAINER_NAME}
+      - "description=ubuntu dev environment (supervisord)"
+    hostname: ${UBUNTU_DEV_CONTAINER_NAME}
     restart: always
     pid: "host"
     # network_mode: "host" # Commented out to use bridge network and enable port mapping
     privileged: true
-    tmpfs:
-      - /run
-      - /tmp
     shm_size: 16g
     ipc: host
     cap_add:
@@ -21,22 +18,21 @@ services:
       - seccomp:unconfined
     stdin_open: true
     tty: true
-    # user: shijiashuai # This was previously 'user: shijiashuai', now handled by build arg
+    # user: shijiashuai
     build:
-      context: ../../..
-      dockerfile: Environments/systemd/alma9-dev/Dockerfile
+      context: . # Context will be Environments/ubuntu-supervisor/
+      dockerfile: Dockerfile # Dockerfile is in the same directory as this compose file
       args:
         # 用户配置
-        - USER_NAME=${SYSTEMD_ALMA9_SSH_USER}
+        - USER_NAME=${UBUNTU_DEV_SSH_USER}
         - USER_ID=2034
         - GROUP_NAME=lush-dev
         - GROUP_ID=2000
-        - USER_PASSWORD=${SYSTEMD_ALMA9_USER_PASSWORD}
+        - USER_PASSWORD=${UBUNTU_DEV_USER_PASSWORD}
         #   - http_proxy=${HTTP_PROXY}
         #   - https_proxy=${HTTPS_PROXY}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - /sys/fs/cgroup:/sys/fs/cgroup:rw
       - /data:/data
       - /data1:/data1
       - /data2:/data2
@@ -49,9 +45,6 @@ services:
       - TERM=${TERM}
       - LANG=${LANG}
       - CONDA_DISABLE_PROGRESS_BARS=1
-      - SSH_PASSWORD=${SYSTEMD_ALMA9_USER_PASSWORD}
     ports:
-      - "${SYSTEMD_ALMA9_SSH_PORT}:22"
-    working_dir: /data-lush/lush-dev/shijiashuai
-    # Add signal for systemd graceful shutdown
-    stop_signal: SIGRTMIN+3
+      - "${UBUNTU_DEV_SSH_PORT}:22"
+    working_dir: /data-lush/lush-dev/shijiashuai 

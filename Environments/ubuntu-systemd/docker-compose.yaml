@@ -22,8 +22,8 @@ services:
     stdin_open: true
     tty: true
     build:
-      context: ../../..
-      dockerfile: Environments/systemd/ubuntu-dev/Dockerfile
+      context: ../../
+      dockerfile: Environments/ubuntu-systemd/Dockerfile
       args:
         # 用户配置
         - USER_NAME=${SYSTEMD_UBUNTU_SSH_USER}

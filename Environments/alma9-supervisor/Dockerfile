@@ -10,7 +10,7 @@ ARG SETUP_MODE=supervisord
 # --- Run Unified Common User Setup Script ---
 # 这个脚本会处理: 安装基础工具 (sudo, zsh, sshd, supervisor, etc.),
 # 创建用户/组, 配置SSH和sudo, 创建基础目录
-COPY scripts/unified-common-setup.sh /tmp/
+COPY common/docker-setup-scripts/unified-common-setup.sh /tmp/
 RUN chmod +x /tmp/unified-common-setup.sh && \
     export SETUP_MODE=${SETUP_MODE} && \
     /tmp/unified-common-setup.sh && \
@@ -109,11 +109,11 @@ RUN dnf -y install golang rust cargo && \
 
 # --- 工具配置 ---
 # 配置 supervisor
-COPY Environments/alma9/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+COPY Environments/alma9-supervisor/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 RUN chmod 644 /etc/supervisor/conf.d/supervisord.conf
 
 # 复制并设置 JDK 切换脚本 (保持不变)
-COPY Environments/alma9/jdk_switcher.sh /usr/local/bin/jdk
+COPY Environments/alma9-supervisor/jdk_switcher.sh /usr/local/bin/jdk
 RUN chmod +x /usr/local/bin/jdk
 
 # --- 安装中文语言包并设置默认 Locale ---
@@ -179,4 +179,4 @@ EXPOSE 22
 CMD ["/usr/bin/supervisord", "-n", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
 
 # 默认工作目录设置（影响进入容器时的默认目录）
-WORKDIR /home/shijiashuai
+WORKDIR /home/shijiashuai 

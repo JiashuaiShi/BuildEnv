@@ -29,7 +29,7 @@
 ### 1. 构建容器
 
 ```bash
-./build.sh
+./1-build.sh
 ```
 
 构建过程可能需要一些时间，因为需要安装多种开发工具和环境。
@@ -37,39 +37,40 @@
 ### 2. 启动容器
 
 ```bash
-./start.sh
+./2-dev-cli.sh start
 ```
 
 ### 3. 连接到容器
 
-通过SSH连接到容器:
+通过SSH连接到容器 (请参考 `2-dev-cli.sh start` 输出的实际端口和 `./.env` 文件中的配置):
 - **主机**: localhost
-- **端口**: 28965
-- **用户**: shijiashuai
-- **密码**: phoenix2024
+- **用户**: shijiashuai (或 `${UBUNTU_DEV_SSH_USER}`)
+- **密码**: phoenix2024 (或 `${UBUNTU_DEV_USER_PASSWORD}`)
 
 ```bash
-ssh -p 28965 shijiashuai@localhost
+# 示例端口，请替换为实际端口
+ssh -p <YOUR_UBUNTU_DEV_SSH_PORT> shijiashuai@localhost 
 ```
 
 或者使用CLI工具:
 
 ```bash
-./dev-cli.sh ssh
+./2-dev-cli.sh ssh
 ```
 
-## 便捷CLI工具
+## 便捷CLI工具 (`2-dev-cli.sh`)
 
 提供了一个便捷的命令行工具用于管理容器:
 
 ```bash
-./dev-cli.sh [命令]
+./2-dev-cli.sh [命令]
 ```
 
-可用命令:
+可用命令 (详情请运行 `./2-dev-cli.sh help`):
 - `build` - 构建容器
 - `start` - 启动容器
 - `stop` - 停止容器
+- `down` - 停止并移除容器
 - `restart` - 重启容器
 - `ssh` - SSH连接到容器
 - `status` - 查看容器状态
@@ -77,18 +78,6 @@ ssh -p 28965 shijiashuai@localhost
 - `clean` - 清理容器和镜像
 - `exec` - 在容器中执行命令
 - `help` - 显示帮助信息
-
-示例:
-```bash
-# 启动容器
-./dev-cli.sh start
-
-# 查看容器状态
-./dev-cli.sh status
-
-# 在容器中执行命令
-./dev-cli.sh exec "g++ --version"
-```
 
 ## JDK版本切换
 
@@ -110,61 +99,12 @@ jdk
 
 ## 目录挂载
 
-容器会自动挂载以下目录:
-- `/data`
-- `/data1`
-- `/data2`
-- `/data-lush`
-- `/data_test`
-- `/mnt/nas1`
-- `/data_melody`
-- `/data-melody`
-
-## 常用操作示例
-
-### 开发环境管理
-```bash
-# 完整重建环境
-./build.sh
-./start.sh
-
-# 快速重启容器
-docker restart shuai-dev
-
-# 进入容器执行命令
-docker exec -it shuai-dev bash
-```
-
-### C++开发示例
-```bash
-# 编译C++20项目
-g++ -std=c++20 main.cpp
-cmake -B build -DCMAKE_BUILD_TYPE=Release
-cmake --build build -j$(nproc)
-```
-
-### Java多版本开发示例
-```bash
-# Spring Boot项目使用JDK 17
-jdk17
-./mvnw spring-boot:run
-
-# 旧项目使用JDK 8
-jdk8
-mvn clean package
-```
-
-### Python虚拟环境示例
-```bash
-# 创建新项目环境
-python -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-```
+容器会自动挂载 `docker-compose.yaml` 中定义的卷。
 
 ## 注意事项
 
-1. 首次构建可能需要较长时间
-2. 确保你的Docker服务已启动
-3. 如果构建失败，可以使用`./dev-cli.sh clean`清理后重试
-4. 容器会占用较多磁盘空间，请确保有足够的存储空间 
+1.  首次构建可能需要较长时间。
+2.  确保Docker服务已启动，并且 `docker-compose` 命令可用。
+3.  如果构建失败，可以使用`./2-dev-cli.sh clean`清理后重试。
+4.  容器会占用较多磁盘空间，请确保有足够的存储空间。
+5.  请检查并按需创建/修改本目录下的 `.env` 文件以配置容器名称、端口、镜像标签等。 

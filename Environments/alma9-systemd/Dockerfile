@@ -8,9 +8,9 @@ LABEL maintainer="shijiashuai" description="Refined AlmaLinux 9 dev environment 
 ARG SETUP_MODE=systemd
 
 # --- Run Unified Common User Setup Script ---
-# 这个脚本会处理: 安装基础工具 (sudo, zsh, sshd - but no config, etc.),
-# 创建用户/组, 配置sudo, 创建基础目录
-COPY scripts/unified-common-setup.sh /tmp/
+# This script handles: installing base tools (sudo, zsh, sshd, etc.),
+# creating user/group, configuring SSH & sudo, creating base directories
+COPY common/docker-setup-scripts/unified-common-setup.sh /tmp/
 RUN chmod +x /tmp/unified-common-setup.sh && \
     export SETUP_MODE=${SETUP_MODE} && \
     /tmp/unified-common-setup.sh && \
@@ -122,7 +122,7 @@ RUN dnf -y install golang rust cargo && \
     dnf clean all
 
 # --- 工具配置 (保持不变) ---
-COPY Environments/systemd/alma9-dev/jdk_switcher.sh /usr/local/bin/jdk
+COPY Environments/alma9-systemd/jdk_switcher.sh /usr/local/bin/jdk
 RUN chmod +x /usr/local/bin/jdk
 
 # --- 安装中文语言包并设置默认 Locale ---
@@ -175,4 +175,4 @@ RUN $HOME/miniconda/bin/pip install --no-cache-dir matplotlib psrecord || echo "
 USER ${USER_NAME}
 WORKDIR /home/${USER_NAME}
 EXPOSE 22
-# ENTRYPOINT/CMD is provided by the base image (systemd)
+# ENTRYPOINT/CMD is provided by the base image (systemd) 

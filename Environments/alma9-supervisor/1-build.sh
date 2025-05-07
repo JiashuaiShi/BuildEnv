@@ -41,4 +41,4 @@ if docker-compose build; then
 else
     echo "Build failed using docker-compose."
     exit 1
-fi
+fi 

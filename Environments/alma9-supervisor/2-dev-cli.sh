@@ -222,4 +222,4 @@ if ! command -v docker-compose &> /dev/null; then
     exit 1
 fi
 
-main "$@"
+main "$@" 
