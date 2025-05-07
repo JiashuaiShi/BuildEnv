@@ -8,17 +8,21 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 # 获取项目根目录 (脚本目录的上级，即 BuildEnv)
 PROJECT_ROOT=$(cd "$SCRIPT_DIR/.." &> /dev/null && pwd)
 
-# Source environment variables from the project root .env file
-ENV_FILE="$PROJECT_ROOT/.env"
+# Source environment variables from the local .env file in this directory
+ENV_FILE="$SCRIPT_DIR/.env"
 if [ -f "$ENV_FILE" ]; then
     echo "Sourcing environment variables from $ENV_FILE"
-    set -a # Automatically export all variables subsequently defined or modified.
+    set -a
     source "$ENV_FILE"
-    set +a # Stop automatically exporting.
+    set +a
 else
-    echo "Warning: $ENV_FILE file not found. Critical configurations might be missing."
-    # It's better to exit or have a very minimal default if .env is critical
-    # For now, we'll let it proceed, but dependent variables might be empty.
+    echo "Warning: $ENV_FILE file not found. Using default script values."
+    # Define critical defaults or exit if .env is essential
+    BENCH_CONTAINER_NAME="shuai-bench-test"
+    BENCH_IMAGE_NAME="shuai/bench-test:20250506"
+    BENCH_SSH_PORT="28970"
+    BENCH_SSH_USER="shijiashuai"
+    BENCH_USER_PASSWORD="phoenix2024"
 fi
 
 # Compose 文件路径 (相对于项目根目录 - BuildEnv)
@@ -28,13 +32,12 @@ COMPOSE_FILE_ABS_PATH="$PROJECT_ROOT/$COMPOSE_FILE_REL_PATH"
 # 构建脚本路径 (assuming it's local to tmp or user will adjust)
 BUILD_SCRIPT_PATH="$SCRIPT_DIR/1-build.sh"
 
-# Use variables loaded from .env
-# Ensure these variables are defined in your .env file
-CONTAINER_NAME="${BENCH_CONTAINER_NAME}" # 来自 .env
-IMAGE_NAME="${BENCH_IMAGE_NAME}"       # 来自 .env
-SSH_PORT="${BENCH_SSH_PORT}"           # 来自 .env
-SSH_USER="shijiashuai"
-SSH_PASSWORD="phoenix2024" # 假设密码已在 Dockerfile 或 common-user-setup.sh 中设置
+# Use variables loaded from the local .env
+CONTAINER_NAME="${BENCH_CONTAINER_NAME}"
+IMAGE_NAME="${BENCH_IMAGE_NAME}"
+SSH_PORT="${BENCH_SSH_PORT}"
+SSH_USER="${BENCH_SSH_USER}"
+SSH_PASSWORD="${BENCH_USER_PASSWORD}"
 
 # 显示帮助信息
 show_help() {

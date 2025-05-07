@@ -22,12 +22,12 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        # 用户配置
-        - USER_NAME=shijiashuai
+        # 用户配置 (从 ./tmp/.env 读取)
+        - USER_NAME=${BENCH_SSH_USER}
         - USER_ID=2034
         - GROUP_NAME=lush-dev
         - GROUP_ID=2000
-        - USER_PASSWORD=phoenix2024
+        - USER_PASSWORD=${BENCH_USER_PASSWORD}
         #   - http_proxy=${HTTP_PROXY}
         #   - https_proxy=${HTTPS_PROXY}
     volumes:
@@ -41,9 +41,9 @@ services:
       - /lush_test:/lush_test
       - /data-lush:/data-lush
     environment:
-      - TERM=${TERM}
-      - LANG=${LANG}
+      - TERM=${TERM} # 从根 .env 继承
+      - LANG=${LANG} # 从根 .env 继承
       - CONDA_DISABLE_PROGRESS_BARS=1
     ports:
-      - "${BENCH_SSH_PORT}:22"
+      - "${BENCH_SSH_PORT}:22" # 从 ./tmp/.env 读取
     working_dir: /data-lush/lush-dev/shijiashuai
