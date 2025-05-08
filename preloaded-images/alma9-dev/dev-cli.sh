@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # AlmaLinux 9 (Supervisord) Development Environment Management Tool
-# Usage: ./2-dev-cli.sh [command]
+# Usage: ./dev-cli.sh [command]
 
 # Get script directory to source .env file reliably
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
@@ -13,20 +13,9 @@ if [ -f "$SCRIPT_DIR/.env" ]; then
     source "$SCRIPT_DIR/.env"
     set +a
 else
-    echo "Warning: $SCRIPT_DIR/.env file not found. Using default script values."
-    ALMA9_CONTAINER_NAME="shuai-alma9-dev"
-    ALMA9_IMAGE_REPO="shuai/alma-dev"
-    ALMA9_IMAGE_TAG="20250508"
-    ALMA9_SSH_PORT="28981"
-    ALMA9_SSH_USER="shijiashuai"
-    ALMA9_USER_PASSWORD="phoenix2024"
-    # Inherited from host or set defaults
-    TERM="xterm-256color"
-    LANG="en_US.UTF-8"
-    # Proxy settings (defaults to empty)
-    HTTP_PROXY=""
-    HTTPS_PROXY=""
-    NO_PROXY="localhost,127.0.0.1"
+    echo "Error: $SCRIPT_DIR/.env file not found. This file is required for configuration."
+    echo "Please create it, possibly by copying a .env.example or .env.template if available."
+    exit 1
 fi
 
 # 容器和服务信息 (与 docker-compose.yaml 和 .env 保持一致)
@@ -39,7 +28,7 @@ SSH_PASSWORD="${ALMA9_USER_PASSWORD}" # 假设密码已在统一脚本中设置
 # 显示帮助信息
 show_help() {
     echo "AlmaLinux 9 (Supervisord) Development Environment Management Tool"
-    echo "Usage: ./2-dev-cli.sh [command]"
+    echo "Usage: ./dev-cli.sh [command]"
     echo ""
     echo "Available commands:"
     echo "  build    - Build or rebuild the environment (calls 1-build.sh)"
@@ -75,7 +64,7 @@ start_container() {
 
     # 检查镜像是否存在
     if ! docker image inspect "${IMAGE_NAME}" &> /dev/null; then
-        echo "Error: Image ${IMAGE_NAME} not found. Please run './2-dev-cli.sh build' first."
+        echo "Error: Image ${IMAGE_NAME} not found. Please run './dev-cli.sh build' first."
         exit 1
     fi
 
@@ -93,7 +82,7 @@ start_container() {
         echo "   Password: ${SSH_PASSWORD} (if set)"
         echo ""
         echo " Connect using: ssh -p ${SSH_PORT} ${SSH_USER}@localhost"
-        echo " Or use this tool: ./2-dev-cli.sh ssh"
+        echo " Or use this tool: ./dev-cli.sh ssh"
         echo "---------------------------------"
         # 显示信息 (与 systemd 版本保持一致，但说明基于 supervisord)
         echo ""
@@ -134,7 +123,7 @@ restart_container() {
 
     echo "Waiting for SSH service..."
     sleep 5
-    echo "Container restarted. Use './2-dev-cli.sh ssh' to connect."
+    echo "Container restarted. Use './dev-cli.sh ssh' to connect."
 }
 
 # SSH连接到容器
@@ -166,7 +155,7 @@ clean_container() {
 exec_in_container() {
     if [ -z "$2" ]; then
         echo "错误: 需要指定要执行的命令"
-        echo "用法: ./2-dev-cli.sh exec \"<命令>\""
+        echo "用法: ./dev-cli.sh exec \"<命令>\""
         exit 1
     fi
 

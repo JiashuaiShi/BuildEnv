@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Bench Test Environment Management Tool
-# Usage: ./2-dev-cli.sh [command]
+# Usage: ./dev-cli.sh [command]
 
 # 获取脚本所在目录
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
@@ -16,13 +16,9 @@ if [ -f "$ENV_FILE" ]; then
     source "$ENV_FILE"
     set +a
 else
-    echo "Warning: $ENV_FILE file not found. Using default script values."
-    # Define critical defaults or exit if .env is essential
-    BENCH_CONTAINER_NAME="shuai-bench-test"
-    BENCH_IMAGE_NAME="shuai/bench-test:20250506"
-    BENCH_SSH_PORT="28970"
-    BENCH_SSH_USER="shijiashuai"
-    BENCH_USER_PASSWORD="phoenix2024"
+    echo "Error: $ENV_FILE file not found. This file is required for configuration."
+    echo "Please create it, possibly by copying a .env.example or .env.template if available."
+    exit 1
 fi
 
 # Compose 文件路径 (相对于项目根目录 - BuildEnv)
@@ -42,7 +38,7 @@ SSH_PASSWORD="${BENCH_USER_PASSWORD}"
 # 显示帮助信息
 show_help() {
     echo "Bench Test (Supervisord) Development Environment Management Tool"
-    echo "Usage: ./2-dev-cli.sh [command]"
+    echo "Usage: ./dev-cli.sh [command]"
     echo ""
     echo "Available commands:"
     echo "  build    - Build or rebuild the environment (calls 1-build.sh)"
@@ -75,7 +71,7 @@ start_container() {
     echo "Starting container ${CONTAINER_NAME} from ${COMPOSE_FILE_ABS_PATH}..."
     # 检查镜像是否存在
     if ! docker image inspect "${IMAGE_NAME}" &> /dev/null; then
-        echo "Error: Image ${IMAGE_NAME} not found. Please run './2-dev-cli.sh build' first."
+        echo "Error: Image ${IMAGE_NAME} not found. Please run './dev-cli.sh build' first."
         exit 1
     fi
 
@@ -93,7 +89,7 @@ start_container() {
         echo "   Password: ${SSH_PASSWORD} (if set)"
         echo ""
         echo " Connect using: ssh -p ${SSH_PORT} ${SSH_USER}@localhost"
-        echo " Or use this tool: ./2-dev-cli.sh ssh"
+        echo " Or use this tool: ./dev-cli.sh ssh"
         echo "---------------------------------"
         # 添加特定信息
         echo ""
@@ -133,7 +129,7 @@ restart_container() {
 
     echo "Waiting for SSH service..."
     sleep 5
-    echo "Container restarted. Use './2-dev-cli.sh ssh' to connect."
+    echo "Container restarted. Use './dev-cli.sh ssh' to connect."
 }
 
 # SSH连接到容器 (这个不需要 compose 文件)
@@ -165,7 +161,7 @@ clean_container() {
 exec_in_container() {
     if [ -z "$1" ]; then
         echo "错误: 需要指定要执行的命令"
-        echo "用法: ./2-dev-cli.sh exec \"<命令>\""
+        echo "用法: ./dev-cli.sh exec \"<命令>\""
         exit 1
     fi
     shift # Remove 'exec'

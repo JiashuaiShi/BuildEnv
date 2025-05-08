@@ -16,13 +16,9 @@ if [ -f "$ENV_FILE" ]; then
     source "$ENV_FILE"
     set +a
 else
-    echo "Warning: $ENV_FILE file not found. Using default script values."
-    # Define critical defaults or exit if .env is essential
-    UBUNTU_DEV_CONTAINER_NAME="shuai-ubuntu-dev-tmp" # Default, match .env
-    UBUNTU_DEV_IMAGE_NAME="shuai/ubuntu-dev:20250506" # Default, match .env
-    UBUNTU_DEV_SSH_PORT="28983"               # Default, match .env
-    UBUNTU_DEV_SSH_USER="shijiashuai"
-    UBUNTU_DEV_USER_PASSWORD="phoenix2024"
+    echo "Error: $ENV_FILE file not found. This file is required for configuration."
+    echo "Please create it, possibly by copying a .env.example or .env.template if available."
+    exit 1
 fi
 
 # Compose 文件路径 (相对于项目根目录 - BuildEnv)
