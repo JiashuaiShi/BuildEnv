@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  ubuntu-systemd-service:
+    image: lessup/ubuntu-systemd:22.04
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - BASE_IMAGE_REPO=${BASE_IMAGE_REPO}
+        - BASE_IMAGE_TAG=${BASE_IMAGE_TAG}
+    # Systemd requires special privileges
+    privileged: true
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro

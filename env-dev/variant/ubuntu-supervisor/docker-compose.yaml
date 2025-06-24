@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  ubuntu-supervisor-service:
+    image: lessup/ubuntu-supervisor:22.04
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - BASE_IMAGE_REPO=${BASE_IMAGE_REPO}
+        - BASE_IMAGE_TAG=${BASE_IMAGE_TAG}

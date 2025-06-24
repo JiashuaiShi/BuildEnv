@@ -1,43 +1,62 @@
-# BuildEnv: Dockerized Development Environments
+# Environment-as-Code: A Standardized Docker Development Framework
 
-This project provides a collection of pre-configured Dockerized development environments aimed at standardizing and simplifying the setup process for various programming languages and tools.
+This project provides a standardized, three-layer framework for creating and managing Docker-based development environments. It promotes consistency, reusability, and ease of maintenance by adopting an "Environment-as-Code" philosophy.
 
-## Overview
+## Core Concepts
 
-The main goal is to offer consistent, reproducible, and enhanced development environments with good defaults, including Chinese language support, common development tools, and easy-to-use management scripts.
+The framework is built upon a three-layer architecture:
+
+1.  **Base Layer (`env-dev/base/`)**: Contains minimal OS base images (e.g., Ubuntu, AlmaLinux) with universal configurations like user setup and common tools.
+2.  **Variant Layer (`env-dev/variant/`)**: Extends a base image with a specific service management system (e.g., `systemd`, `supervisor`). This layer defines *how* services run.
+3.  **Application Layer (`env-dev/app/`)**: Extends a variant image with language-specific tools and dependencies (e.g., C++/Python toolchains, NodeJS, etc.). This is the final, user-facing development environment.
+
+## How to Use
+
+### Building an Environment
+
+A centralized build script handles the entire dependency chain (`base` -> `variant` -> `app`).
+
+To build the `dev-cpp-python` environment:
+```bash
+./build-logic/scripts/build.sh dev-cpp-python
+```
+
+### Managing an Environment
+
+Each application environment has a lightweight wrapper script (`2-dev-cli.sh`) that delegates commands to a centralized management script.
+
+To start the `dev-cpp-python` container:
+```bash
+./env-dev/app/dev-cpp-python/2-dev-cli.sh start
+```
+
+To get a shell inside the container:
+```bash
+./env-dev/app/dev-cpp-python/2-dev-cli.sh exec bash
+```
+
+Available commands: `start`, `stop`, `restart`, `rm`, `logs`, `exec`, `status`, `rmi`, `help`.
 
 ## Directory Structure
 
--   **/Environments**: Contains Dockerfiles, docker-compose files, and specific configurations for different operating systems and development stacks (e.g., `alma9`, `ubuntu/dev`).
-    -   Each subdirectory typically includes:
-        -   `Dockerfile`: Defines the image build process.
-        -   `docker-compose.yaml`: For orchestrating the container services.
-        -   `1-build.sh`: Script to build the Docker image.
-        -   `2-dev-cli.sh`: Script to manage the lifecycle of the development container (start, stop, exec, etc.).
-        -   `README.md`: Specific instructions for that environment.
--   **/common**: Contains scripts and configuration files shared across multiple environments.
-    -   `docker-setup-scripts/`: Scripts used during the `docker build` phase (e.g., `unified-common-setup.sh`).
--   **/scripts**: Contains utility and management scripts that operate on the environments or the project itself (e.g., `migrate_containers.sh` for migrating container images).
-    -   See `scripts/README.md` for details on `migrate_containers.sh`.
--   **/tmp**: (Ignored by git) Used for temporary files, testing, and experimental setups.
--   `ROADMAP.md`: Outlines future development plans and TODOs for the project.
--   `.gitignore`: Specifies intentionally untracked files that Git should ignore.
--   `README.md`: This file - provides an overview of the project.
-
-## Getting Started
-
-1.  **Clone the repository.**
-2.  **Navigate to a specific environment directory** under `Environments/` (e.g., `cd Environments/alma9`).
-3.  **Review the environment-specific `README.md`** for any prerequisites or special instructions.
-4.  **Build the Docker image**: Typically by running `./1-build.sh`.
-5.  **Start and manage the container**: Typically using `./2-dev-cli.sh` (e.g., `./2-dev-cli.sh start`, `./2-dev-cli.sh exec`).
-
-## Key Features (Ongoing Development)
-
--   Standardized user setup (`shijiashuai` with sudo privileges).
--   Chinese language support (`zh_CN.UTF-8`).
--   Common development tools pre-installed.
--   Supervisord for managing services within containers.
--   Scripts for easy environment management and migration.
-
-Please refer to the `ROADMAP.md` for planned enhancements. 
+```
+.
+├── build-logic/
+│   └── scripts/
+│       ├── build.sh          # Centralized build script
+│       └── manage-env.sh     # Centralized management script
+├── env-dev/
+│   ├── app/
+│   │   └── dev-cpp-python/   # Example application environment
+│   │       ├── Dockerfile
+│   │       ├── .env
+│   │       ├── docker-compose.yaml
+│   │       └── 2-dev-cli.sh
+│   ├── base/
+│   │   └── ubuntu/           # Example base layer
+│   └── variant/
+│       ├── ubuntu-supervisor/ # Example variant layer
+│       └── ubuntu-systemd/
+├── README.md
+└── ROADMAP.md
+```

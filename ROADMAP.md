@@ -1,33 +1,30 @@
-# 开发路线图与 TODO 列表
+# Project Roadmap
 
-## 阶段一：环境标准化与增强
+This document outlines the planned development phases for the Environment-as-Code framework.
 
-1.  **统一构建配置：**
-    *   审查并标准化所有模块（`alma9`、`ubuntu/dev`、`systemd/*` 等）的构建配置。
-    *   消除 Dockerfile 和 `docker-compose.yaml` 文件中不必要的差异。
-    *   确保基础镜像、用户设置和通用脚本的一致使用。
+## Phase 1: Foundational Refactoring (Completed)
 
-2.  **改进密码管理：**
-    *   从脚本（`2-dev-cli.sh`）和 `docker-compose.yaml` 环境变量中移除硬编码的密码。
-    *   研究并实施更安全的方法来管理开发环境中的秘密/密码（例如，使用带有 gitignore 的 `.env` 文件，或在开发设置适宜的情况下探索 Docker secrets）。
+- [x] **Establish 3-Layer Architecture**: Define and implement the `base`, `variant`, and `app` directory structure.
+- [x] **Centralize Build Logic**: Create a single `build.sh` script capable of building an environment and its dependencies.
+- [x] **Centralize Management Logic**: Create a single `manage-env.sh` script for all container lifecycle operations.
+- [x] **Standardize Configuration**: Implement a consistent `.env` file structure across all environments.
+- [x] **Migrate First App**: Refactor the `dev-cpp-python` environment as a proof-of-concept.
+- [x] **Update Documentation**: Overhaul `README.md` and create this `ROADMAP.md`.
 
-3.  **增强中文语言支持：**
-    *   **字体：** 研究并将更好、更全面的中文字体包集成到基础镜像中，以确保在终端和潜在的 GUI 应用中正确显示所有 CJK 字符。
-    *   **区域设置：** 验证 `LANG=zh_CN.UTF-8` 和 `LC_ALL=zh_CN.UTF-8` 是否得到一致有效的应用。
+## Phase 2: Ecosystem Expansion & Hardening
 
-4.  **优化 APT/DNF 仓库配置：**
-    *   **镜像源使用：** 标准化使用可靠的中国镜像源（如阿里云、清华大学 TUNA）为 APT (Ubuntu) 和 DNF (AlmaLinux) 加快下载速度。
-    *   **GPG 密钥问题：** 调查并解决软件包安装过程中反复出现的 GPG 密钥验证错误。确保镜像源的所有密钥都已正确导入并受到信任。
+- [ ] **Migrate All Existing Environments**: Convert all other environments (`bio-components`, etc.) to the new framework.
+- [ ] **Implement Automated Testing**: Add a testing framework (e.g., using `bats` or `pytest`) to validate builds and environment functionality.
+- [ ] **Secrets Management**: Integrate a secure way to handle secrets (e.g., Docker secrets, Vault) instead of plaintext passwords in `.env` files.
+- [ ] **Improve Script Robustness**: Add more comprehensive error handling and validation to the central scripts.
 
-## 阶段二：扩展开发能力
+## Phase 3: CI/CD and Automation
 
-5.  **拓宽环境支持：**
-    *   **前端开发：** 为常见的前端开发工具和运行时（如 Node.js、npm/yarn，以及在容器化设置中可行的浏览器调试工具）添加支持。
-    *   **其他语言/框架：** 根据预期需求，考虑为其他语言或框架添加预配置环境。
+- [ ] **GitHub Actions Integration**: Create CI/CD workflows to automatically build, test, and push Docker images on git push/merge.
+- [ ] **Automated Versioning**: Implement a system for automatically tagging and versioning images based on git tags or commit hashes.
+- [ ] **Nightly Builds**: Set up scheduled builds for core base and variant images to incorporate the latest security patches.
 
-## 未来考虑 / 设想
+## Phase 4: Future Vision
 
-*   **IDE 集成：** 改进并记录 IDE 集成（VSCode Dev Containers、CLion 远程开发），以提供更流畅的开发者体验。
-*   **测试框架：** 集成与所支持语言相关的常用测试框架。
-*   **性能优化：** 持续审查并优化镜像构建时间和容器启动时间。
-*   **文档维护：** 保持所有 README 文件和路线图（ROADMAP）的更新。 
+- [ ] **Web UI / Dashboard**: Develop a simple web interface for managing environments.
+- [ ] **Kubernetes/Nomad Integration**: Explore options for deploying these environments to container orchestrators.

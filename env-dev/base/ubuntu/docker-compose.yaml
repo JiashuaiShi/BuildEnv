@@ -1,0 +1,8 @@
+version: '3.8'
+
+services:
+  ubuntu-base-service:
+    image: lessup/ubuntu:22.04
+    build:
+      context: .
+      dockerfile: Dockerfile

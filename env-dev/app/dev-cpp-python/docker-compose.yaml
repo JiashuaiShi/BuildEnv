@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  ${APP_SERVICE_NAME}:
+    image: ${APP_IMAGE_REPO}:${APP_IMAGE_TAG}
+    container_name: ${APP_CONTAINER_NAME}
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - VARIANT_IMAGE_REPO=${VARIANT_IMAGE_REPO}
+        - VARIANT_IMAGE_TAG=${VARIANT_IMAGE_TAG}
+        - HTTP_PROXY=${HTTP_PROXY}
+        - HTTPS_PROXY=${HTTPS_PROXY}
+    environment:
+      - HTTP_PROXY=${HTTP_PROXY}
+      - HTTPS_PROXY=${HTTPS_PROXY}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    # The base variant (ubuntu-supervisor) is expected to handle the long-running process.
+    # No command override is needed here.
