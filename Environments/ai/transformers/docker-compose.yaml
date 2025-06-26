@@ -1,10 +1,10 @@
 version: '3.8'
 services:
   transformers:
-    environment:
-      http_proxy: http://172.19.11.241:443
-      https_proxy: http://172.19.11.241:443
-      no_proxy: localhost,127.*,10.*,172.16.*
+    # environment:
+    #   http_proxy: http://172.19.11.241:443
+    #   https_proxy: http://172.19.11.241:443
+    #   no_proxy: localhost,127.*,10.*,172.16.*
     labels:
       version: "1.0"
       description: "huggingface/transformers test"
