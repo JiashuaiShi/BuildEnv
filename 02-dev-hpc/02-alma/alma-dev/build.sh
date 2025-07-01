@@ -1,37 +1,67 @@
 #!/bin/bash
+set -e # Exit on any error
 
-echo "========== Building AlmaLinux 9 Unified Development Environment =========="
-# Removed specific tool list, can be added back if needed.
+# --- Configuration ---
+BASE_DIR="../base"
+BASE_IMAGE_NAME="alma-base"
+BASE_IMAGE_TAG="latest"
+DEV_IMAGE_NAME="alma-dev"
+DEV_IMAGE_TAG="latest"
+ENV_FILE=".env"
 
-# 设置环境变量优化构建
-export DOCKER_BUILDKIT=1
-export COMPOSE_DOCKER_CLI_BUILD=1
-export DOCKER_DEFAULT_PLATFORM=linux/amd64
-export PYTHONUNBUFFERED=1
+# --- Helper Functions ---
+info() {
+    echo -e "\033[1;34m[INFO]\033[0m $1"
+}
 
-# Define container name based on docker-compose.yaml
-CONTAINER_NAME="jiashuai.alma_9"
+error() {
+    echo -e "\033[1;31m[ERROR]\033[0m $1" >&2
+    exit 1
+}
 
-# 停止并删除旧容器（如果存在）
-# Use docker-compose down which handles the service name defined in the compose file.
-if docker ps -a | grep -q ${CONTAINER_NAME}; then
-    echo "Stopping and removing existing container..."
-    # docker-compose down uses the project name (directory name by default)
-    # or the service name defined in the file. It should handle this.
-    docker-compose down --remove-orphans 2>/dev/null || true
-    # Explicitly remove by container name just in case
-    docker rm -f ${CONTAINER_NAME} 2>/dev/null || true
+# --- Main Logic ---
+info "Starting build for the AlmaLinux HPC Development Environment..."
+
+# 1. Check for Docker
+if ! command -v docker &> /dev/null; then
+    error "Docker could not be found. Please install Docker."
 fi
 
-# 开始构建容器
-echo "Starting build process..."
-echo "Note: This may take a while, please be patient..."
-# docker-compose build uses the docker-compose.yaml in the current directory
-if docker-compose build; then
-    echo "========== Build Complete =========="
-    echo "To start the container, run:"
-    echo "./start.sh"
+# 2. Build the base image if it doesn't exist
+if ! docker image inspect "${BASE_IMAGE_NAME}:${BASE_IMAGE_TAG}" &> /dev/null; then
+    info "Base image '${BASE_IMAGE_NAME}:${BASE_IMAGE_TAG}' not found. Building it now..."
+    if [ ! -f "${BASE_DIR}/Dockerfile" ]; then
+        error "Base Dockerfile not found at '${BASE_DIR}/Dockerfile'"
+    fi
+
+    # Load password from .env file
+    if [ -f "$ENV_FILE" ]; then
+        export $(grep -v '^#' $ENV_FILE | xargs)
+    else
+        error "'.env' file not found. Please create it with a DEV_PASSWORD."
+    fi
+
+    if [ -z "$DEV_PASSWORD" ]; then
+        error "DEV_PASSWORD is not set in the .env file."
+    fi
+
+    # Build the base image with the password as a build-arg
+    docker build \
+        --build-arg "DEV_PASSWORD=${DEV_PASSWORD}" \
+        -t "${BASE_IMAGE_NAME}:${BASE_IMAGE_TAG}" \
+        "${BASE_DIR}"
+    info "Base image built successfully."
 else
-    echo "Build failed"
-    exit 1
-fi 
+    info "Base image '${BASE_IMAGE_NAME}:${BASE_IMAGE_TAG}' already exists. Skipping build."
+fi
+
+# 3. Build the development image using Docker Compose
+info "Building the development image '${DEV_IMAGE_NAME}:${DEV_IMAGE_TAG}'..."
+# Docker Compose will use the docker-compose.yaml in the current directory
+if docker-compose build; then
+    info "========== Build Complete =========="
+    info "To start the container, run: ./start.sh"
+    info "To connect via SSH, run: ./dev-cli.sh ssh"
+else
+    error "Development image build failed."
+fi

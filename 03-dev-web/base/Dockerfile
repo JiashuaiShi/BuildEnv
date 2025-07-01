@@ -1,25 +1,24 @@
 #
-# Ubuntu Base Image for Development
+# Web Base Image for Development
 #
-# This Dockerfile sets up a minimal base environment with a non-root user,
-# SSH access, and essential tools, managed by Supervisor.
+# This Dockerfile sets up a base environment with Node.js, Python,
+# a non-root user, SSH access, and essential tools.
 #
 ARG UBUNTU_VERSION=24.04
 FROM ubuntu:${UBUNTU_VERSION}
 
 LABEL maintainer="Cascade AI Assistant"
-LABEL description="Base image for development with Ubuntu, user setup, and SSH."
+LABEL description="Base image for web development with Ubuntu, Node.js, Python, user setup, and SSH."
 
 # --- Environment Variables ---
 ENV DEBIAN_FRONTEND=noninteractive \
     TZ=Asia/Shanghai \
     LANG=en_US.UTF-8 \
     LANGUAGE=en_US:en \
-    LC_ALL=en_US.UTF-8
+    LC_ALL=en_US.UTF-8 \
+    NODE_VERSION=20
 
 # --- Build Arguments ---
-# Defines the user, group, and password for the non-root user.
-# Example: docker build --build-arg DEV_PASSWORD=your_pass -t ubuntu-base .
 ARG DEV_USER=shijiashuai
 ARG DEV_PASSWORD=phoenix2024
 ARG USER_UID=2034
@@ -27,7 +26,6 @@ ARG DEV_GROUP=lush-dev
 ARG GROUP_GID=2000
 
 # --- Package Installation ---
-# Combine all apt operations into a single RUN layer to optimize image size.
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     # Basic utilities
@@ -37,42 +35,33 @@ RUN apt-get update && \
     curl \
     gnupg \
     zsh \
+    # Python
+    python3 \
+    python3-pip \
     # SSH and process management
     openssh-server \
     supervisor \
+    # Node.js setup from NodeSource
+    && curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | bash - \
+    && apt-get install -y nodejs \
     # Set timezone and clean up
     && ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # --- Configuration & User Setup ---
-# Copy configuration files and the unified setup script.
-COPY sshd_config /etc/ssh/sshd_config
 COPY supervisord.conf /etc/supervisor/supervisord.conf
+COPY sshd_config /etc/ssh/sshd_config
 COPY ../../scripts/unified-user-setup.sh /tmp/unified-user-setup.sh
 
 # Execute the setup script to create the user, then generate SSH host keys.
 RUN chmod +x /tmp/unified-user-setup.sh && \
     /tmp/unified-user-setup.sh "${DEV_USER}" "${DEV_PASSWORD}" "${USER_UID}" "${DEV_GROUP}" "${GROUP_GID}" && \
     rm /tmp/unified-user-setup.sh && \
-    # Generate SSH host keys
     ssh-keygen -A && \
-    # Ensure the sshd run directory exists
     mkdir -p /var/run/sshd
 
 # --- Ports & Entrypoint ---
-EXPOSE 22
+EXPOSE 22 3000 8000 8080
 
 # Use supervisord to start and manage the sshd service.
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/supervisord.conf"]
-
-USER root
-
-# Supervisor配置
-RUN mkdir -p /etc/supervisor/conf.d
-COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
-
-# 开放SSH端口
-EXPOSE 22
-
-# 设置容器启动命令
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]

@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  web-dev:
+    build:
+      context: .
+      args:
+        - BASE_IMAGE=web-base:latest
+        - DEV_USER=${DEV_USER:-shijiashuai}
+    image: web-dev:latest
+    container_name: web-dev
+    env_file:
+      - .env
+    ports:
+      - "2224:22"
+      - "3000:3000"
+      - "8000:8000"
+      - "8080:8080"
+    volumes:
+      - /data-lush:/data-lush
+      - .:/workspace
+    working_dir: /workspace
+    user: "${USER_UID:-2034}:${GROUP_GID:-2000}"
+    privileged: true
+    restart: unless-stopped
+    networks:
+      - dev_net
+
+networks:
+  dev_net:
+    driver: bridge

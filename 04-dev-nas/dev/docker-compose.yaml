@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  nas-dev:
+    build:
+      context: .
+      args:
+        - BASE_IMAGE=nas-base:latest
+        - DEV_USER=${DEV_USER:-shijiashuai}
+    image: nas-dev:latest
+    container_name: nas-dev
+    env_file:
+      - .env
+    ports:
+      # SSH
+      - "2225:22"
+      # Samba
+      - "139:139"
+      - "445:445"
+      # NFS
+      - "111:111"
+      - "111:111/udp"
+      - "2049:2049"
+      - "2049:2049/udp"
+    volumes:
+      # General data volume
+      - /data-lush:/data-lush
+      # Example of a dedicated share volume
+      - ./share:/export/share
+    user: "${USER_UID:-2034}:${GROUP_GID:-2000}"
+    # Privileged mode is required for services like NFS to function correctly.
+    privileged: true
+    restart: unless-stopped
+    networks:
+      - dev_net
+
+networks:
+  dev_net:
+    driver: bridge

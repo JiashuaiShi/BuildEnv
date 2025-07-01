@@ -4,11 +4,11 @@
 # Usage: ./dev-cli.sh [command]
 
 # Define container and service name based on docker-compose.yaml
-CONTAINER_NAME="jiashuai.alma_9"
-SERVICE_NAME="alma_9"
+CONTAINER_NAME="alma-dev"
+SERVICE_NAME="alma-dev"
+SSH_PORT="28974"
 # Image name is built by docker-compose, not strictly needed here
 # IMAGE_NAME="jiashuai/alma_9" # Example, might vary based on build
-SSH_PORT="28974"
 # Determine the SSH user based on Dockerfile setup (UID 2034)
 # This requires knowing the username associated with UID 2034 inside the container.
 # Placeholder - needs to be updated with the actual username.
@@ -20,8 +20,7 @@ show_help() {
     echo "Usage: ./dev-cli.sh [command]"
     echo ""
     echo "Available commands:"
-    echo "  build    - Build or rebuild the development environment container"
-    echo "  start    - Start the container (using docker-compose up)"
+
     echo "  stop     - Stop the container (using docker-compose stop)"
     echo "  down     - Stop and remove the container (using docker-compose down)"
     echo "  restart  - Restart the container (using docker-compose restart)"
@@ -69,7 +68,7 @@ restart_container() {
 # SSH连接到容器
 ssh_to_container() {
     echo "Connecting to container ${CONTAINER_NAME} via SSH..."
-    echo "Attempting: ssh -p ${SSH_PORT} ${SSH_USER}@localhost"
+    echo "Connect example: ssh -p ${SSH_PORT} shijiashuai@localhost"
     echo "Note: Ensure the SSH user '${SSH_USER}' exists and SSH is configured in the container."
     ssh -p ${SSH_PORT} ${SSH_USER}@localhost
 }
@@ -119,12 +118,7 @@ exec_in_container() {
 # 主函数
 main() {
     case "$1" in
-        build)
-            build_container
-            ;;
-        start)
-            start_container
-            ;;
+
         stop)
             stop_container
             ;;

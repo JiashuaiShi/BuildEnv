@@ -1,50 +1,61 @@
-# 启动容器
-# docker-compose up -d
-# 单独标记和构建镜像
-# docker build -t jiashuai/alma_9 .
-
+#
+# Docker Compose for AlmaLinux HPC Development Environment
+#
 version: '3.8'
+
 services:
-  alma_9:
-    labels:
-      version: "1.0"
-      description: "AlmaLinux 9 with C++/Java/Python development tools managed by Supervisor"
-    container_name: jiashuai.alma_9
+  alma-dev:
+    # -- Image & Build Configuration --
+    # The image will be named 'alma-dev:latest'
+    image: alma-dev:latest
+    # Build context is the current directory (alma-dev)
+    build:
+      context: .
+      dockerfile: Dockerfile
+      # Pass the base image name as a build argument
+      args:
+        - BASE_IMAGE=alma-base:latest
+
+    # -- Container Configuration --
+    container_name: alma-dev
+    hostname: alma-dev
+    # Load password from .env file for use inside the container (e.g., by scripts)
+    env_file:
+      - .env
+    # Set proxy environment variables if needed
     environment:
       http_proxy: http://172.19.11.241:443
       https_proxy: http://172.19.11.241:443
       no_proxy: localhost,127.*,10.*,172.16.*
-    hostname: alma_9
+
+    # -- Runtime & Security --
+    # Run as the non-root user defined in the base image
+    user: "2034:2000"
+    # Privileged mode and capabilities for debugging tools like gdb
     privileged: true
-    restart: always
-    shm_size: 16g
-    ipc: host
-    stdin_open: true # 保持stdin开放
-    tty: true        # TTY is needed for supervisord in the foreground
     cap_add:
       - SYS_PTRACE
     security_opt:
       - seccomp=unconfined
-    build:
-      context: ..
-      dockerfile: Dockerfile
+    # Shared memory and IPC for high-performance applications
+    shm_size: 16g
+    ipc: host
+    # Keep the container running
+    restart: unless-stopped
+    tty: true
+    stdin_open: true
+
+    # -- Networking & Volumes --
+    ports:
+      # Map container's SSH port 22 to host port 28974
+      - "28974:22"
     volumes:
-      # Map the workspace
+      # Mount your local workspace into the container
       - /data/lush-dev/shijiashuai/workspace:/workspace
-      # Keep existing data volume mappings
+      # Mount additional data volumes
       - /data:/data
       - /data1:/data1
-    ports:
-      # Map the SSH port defined in the Dockerfile (22) to host port 28974
-      - "28974:22"
-    # Run container as this user:group (defined in Dockerfile)
-    # Note: Supervisord runs as root (defined in supervisord.conf),
-    # but interactive shells via docker exec or ssh will use this user.
-    # If direct interaction primarily uses `docker exec` or `ssh`,
-    # running the main process (supervisord) as root is fine.
-    # If you need the *initial* process to be the user, supervisord
-    # would need configuration changes, or don't use supervisord.
-    user: "2034:2000"
+
+    # -- Default Directory --
     working_dir: /workspace
-    # command: ["zsh"] # REMOVED: Command is now set in Dockerfile CMD to run supervisord
-    
+

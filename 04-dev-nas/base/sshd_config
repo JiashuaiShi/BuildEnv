@@ -1,0 +1,15 @@
+#
+# OpenSSH Server Configuration for NAS Base Image
+#
+
+Port 22
+
+# Authentication
+PermitRootLogin yes
+PasswordAuthentication yes
+
+# Use PAM to authorize users
+UsePAM yes
+
+# SFTP Subsystem
+Subsystem sftp /usr/libexec/openssh/sftp-server

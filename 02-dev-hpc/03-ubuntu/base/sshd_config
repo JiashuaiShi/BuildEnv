@@ -1,0 +1,22 @@
+#
+# OpenSSH server configuration file.
+# See sshd_config(5) for more information.
+#
+
+# This configuration is tailored for a development container.
+# It allows password authentication for convenience.
+# For production, it is strongly recommended to use key-based authentication.
+
+Port 22
+PermitRootLogin yes
+PasswordAuthentication yes
+ChallengeResponseAuthentication no
+UsePAM yes
+X11Forwarding yes
+PrintMotd no
+AcceptEnv LANG LC_*
+Subsystem sftp /usr/lib/openssh/sftp-server
+
+# This is required for some container environments
+# to prevent "pam_loginuid(sshd:session): Failed to create session" errors.
+session    optional     pam_loginuid.so

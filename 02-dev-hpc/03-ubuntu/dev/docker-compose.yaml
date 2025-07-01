@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  ubuntu-dev:
+    build:
+      context: .
+      args:
+        - BASE_IMAGE=ubuntu-base:latest
+        - DEV_USER=${DEV_USER:-shijiashuai}
+    image: ubuntu-dev:latest
+    container_name: ubuntu-dev
+    env_file:
+      - .env
+    ports:
+      - "2223:22"
+    volumes:
+      - /data-lush:/data-lush
+    user: "${USER_UID:-2034}:${GROUP_GID:-2000}"
+    privileged: true
+    security_opt:
+      - seccomp=unconfined
+    cap_add:
+      - SYS_PTRACE
+    restart: unless-stopped
+    networks:
+      - dev_net
+
+networks:
+  dev_net:
+    driver: bridge

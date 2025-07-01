@@ -6,8 +6,8 @@ echo "Starting AlmaLinux 9 Unified Development Environment..."
 # Assuming image name follows pattern <username>/<service_name>:<tag>
 # Or inferred by docker-compose build.
 # Let's rely on docker-compose to find the correct image.
-CONTAINER_NAME="jiashuai.alma_9"
-SERVICE_NAME="alma_9"
+SERVICE_NAME="alma-dev"
+CONTAINER_NAME="alma-dev"
 SSH_PORT="28974"
 USER_ID="2034"
 GROUP_ID="2000"
@@ -37,10 +37,10 @@ if docker-compose up -d ${SERVICE_NAME}; then
     echo "Container started successfully. SSH connection info:"
     echo "  Host: localhost"
     echo "  Port: ${SSH_PORT}"
-    echo "  User: Defined in Dockerfile (UID ${USER_ID}, GID ${GROUP_ID})"
+    echo "  User: shijiashuai (UID 2034, GID 2000)"
     echo "  Password: (Set within Dockerfile/container setup if applicable)"
     echo ""
-    echo "Connect example: ssh -p ${SSH_PORT} <username>@localhost"
+    echo "Connect example: ssh -p ${SSH_PORT} shijiashuai@localhost"
     # Replace <username> with the actual username configured for UID 2034 inside the container
     echo ""
     echo "Use './dev-cli.sh ssh' for easier connection if configured."
