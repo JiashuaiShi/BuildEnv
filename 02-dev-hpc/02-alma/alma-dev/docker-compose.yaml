@@ -1,61 +1,63 @@
 #
-# Docker Compose for AlmaLinux HPC Development Environment
+# Docker Compose 配置文件 - 用于 AlmaLinux HPC 开发环境
 #
 version: '3.8'
 
 services:
+  # 服务名称
   alma-dev:
-    # -- Image & Build Configuration --
-    # The image will be named 'alma-dev:latest'
+    # --- 镜像与构建配置 ---
+    # 定义最终生成的镜像名称为 'alma-dev:latest'
     image: alma-dev:latest
-    # Build context is the current directory (alma-dev)
     build:
+      # 构建上下文为当前目录 (alma-dev)
       context: .
       dockerfile: Dockerfile
-      # Pass the base image name as a build argument
+      # 将基础镜像的名称作为构建参数传递给 Dockerfile
       args:
         - BASE_IMAGE=alma-base:latest
 
-    # -- Container Configuration --
+    # --- 容器配置 ---
     container_name: alma-dev
     hostname: alma-dev
-    # Load password from .env file for use inside the container (e.g., by scripts)
+    # 从 .env 文件加载环境变量，例如密码，供容器内部脚本使用
     env_file:
       - .env
-    # Set proxy environment variables if needed
+    # 设置代理环境变量 (如果您的网络环境需要)
     environment:
       http_proxy: http://172.19.11.241:443
       https_proxy: http://172.19.11.241:443
       no_proxy: localhost,127.*,10.*,172.16.*
 
-    # -- Runtime & Security --
-    # Run as the non-root user defined in the base image
+    # --- 运行时与安全设置 ---
+    # 指定容器运行的用户和用户组 (UID:GID)，与基础镜像中创建的用户匹配
     user: "2034:2000"
-    # Privileged mode and capabilities for debugging tools like gdb
+    # 启用特权模式并增加权能，用于支持 gdb 等调试工具
     privileged: true
     cap_add:
       - SYS_PTRACE
     security_opt:
       - seccomp=unconfined
-    # Shared memory and IPC for high-performance applications
+    # 为高性能计算应用设置更大的共享内存和启用主机 IPC
     shm_size: 16g
     ipc: host
-    # Keep the container running
+    # 除非手动停止，否则容器将一直运行
     restart: unless-stopped
+    # 保持标准输入打开并分配一个伪终端，使容器可以交互
     tty: true
     stdin_open: true
 
-    # -- Networking & Volumes --
+    # --- 网络与卷挂载 ---
     ports:
-      # Map container's SSH port 22 to host port 28974
-      - "28974:22"
+      # 将容器的 SSH 端口 22 映射到主机的 2222 端口
+      - "2222:22"
     volumes:
-      # Mount your local workspace into the container
+      # 将您本地的工作区目录挂载到容器的 /workspace
       - /data/lush-dev/shijiashuai/workspace:/workspace
-      # Mount additional data volumes
+      # 挂载额外的数据卷
       - /data:/data
       - /data1:/data1
 
-    # -- Default Directory --
+    # --- 默认工作目录 ---
+    # 设置容器内的默认工作目录
     working_dir: /workspace
-

@@ -1,30 +1,56 @@
+#
+# Docker Compose 配置文件 - 用于 Ubuntu HPC 开发环境
+#
 version: '3.8'
 
 services:
+  # 服务名称
   ubuntu-dev:
-    build:
-      context: .
-      args:
-        - BASE_IMAGE=ubuntu-base:latest
-        - DEV_USER=${DEV_USER:-shijiashuai}
+    # --- 镜像与构建配置 ---
+    # 定义最终生成的镜像名称为 'ubuntu-dev:latest'
     image: ubuntu-dev:latest
+    build:
+      # 构建上下文为当前目录 (dev)
+      context: .
+      dockerfile: Dockerfile
+      # 将基础镜像名称和用户名作为构建参数传递给 Dockerfile
+      args:
+        BASE_IMAGE: ubuntu-base:latest
+        DEV_USER: ${DEV_USER:-shijiashuai}
+
+    # --- 容器配置 ---
     container_name: ubuntu-dev
+    hostname: ubuntu-dev
+    # 从 .env 文件加载环境变量
     env_file:
       - .env
-    ports:
-      - "2223:22"
-    volumes:
-      - /data-lush:/data-lush
+
+    # --- 运行时与安全设置 ---
+    # 指定容器运行的用户和用户组 (UID:GID)，与基础镜像中创建的用户匹配
+    # 从 .env 文件读取，如果不存在则使用默认值
     user: "${USER_UID:-2034}:${GROUP_GID:-2000}"
+    # 启用特权模式并增加权能，用于支持 gdb 等调试工具
     privileged: true
-    security_opt:
-      - seccomp=unconfined
     cap_add:
       - SYS_PTRACE
+    security_opt:
+      - seccomp=unconfined
+    # 除非手动停止，否则容器将一直运行
     restart: unless-stopped
-    networks:
-      - dev_net
+    # 保持标准输入打开并分配一个伪终端，使容器可以交互
+    tty: true
+    stdin_open: true
 
-networks:
-  dev_net:
-    driver: bridge
+    # --- 网络与卷挂载 ---
+    ports:
+      # 将容器的 SSH 端口 22 映射到主机的 2223 端口
+      - "2223:22"
+    volumes:
+      # 将您本地的数据目录挂载到容器中
+      - /data-lush:/data-lush
+      # 建议添加工作区挂载, 例如:
+      # - F:\Deving\devenv\workspace:/workspace
+
+    # --- 默认工作目录 ---
+    # 设置容器内的默认工作目录
+    working_dir: /workspace

@@ -1,39 +1,59 @@
+#
+# Docker Compose 配置文件 - 用于 NAS 开发/管理环境
+#
 version: '3.8'
 
 services:
+  # 服务名称
   nas-dev:
-    build:
-      context: .
-      args:
-        - BASE_IMAGE=nas-base:latest
-        - DEV_USER=${DEV_USER:-shijiashuai}
+    # --- 镜像与构建配置 ---
+    # 定义最终生成的镜像名称为 'nas-dev:latest'
     image: nas-dev:latest
+    build:
+      # 构建上下文为当前目录 (dev)
+      context: .
+      dockerfile: Dockerfile
+      # 将基础镜像名称和用户名作为构建参数传递给 Dockerfile
+      args:
+        BASE_IMAGE: nas-base:latest
+        DEV_USER: ${DEV_USER:-shijiashuai}
+
+    # --- 容器配置 ---
     container_name: nas-dev
+    hostname: nas-dev
+    # 从 .env 文件加载环境变量
     env_file:
       - .env
+
+    # --- 运行时与安全设置 ---
+    # 指定容器运行的用户和用户组 (UID:GID)
+    user: "${USER_UID:-2034}:${GROUP_GID:-2000}"
+    # 启用特权模式是 NFS 等服务正常运行所必需的
+    privileged: true
+    # 除非手动停止，否则容器将一直运行
+    restart: unless-stopped
+    # 保持标准输入打开并分配一个伪终端
+    tty: true
+    stdin_open: true
+
+    # --- 网络与卷挂载 ---
     ports:
       # SSH
       - "2225:22"
       # Samba
       - "139:139"
       - "445:445"
-      # NFS
+      # NFS (TCP 和 UDP)
       - "111:111"
       - "111:111/udp"
       - "2049:2049"
       - "2049:2049/udp"
     volumes:
-      # General data volume
-      - /data-lush:/data-lush
-      # Example of a dedicated share volume
+      # 将本地的 ./share 目录挂载到容器内，作为示例共享点
       - ./share:/export/share
-    user: "${USER_UID:-2034}:${GROUP_GID:-2000}"
-    # Privileged mode is required for services like NFS to function correctly.
-    privileged: true
-    restart: unless-stopped
-    networks:
-      - dev_net
+      # 挂载额外的数据卷
+      - /data-lush:/data-lush
 
-networks:
-  dev_net:
-    driver: bridge
+    # --- 默认工作目录 ---
+    # 设置容器内的默认工作目录为共享区的根目录
+    working_dir: /export

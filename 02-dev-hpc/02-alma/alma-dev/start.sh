@@ -1,55 +1,30 @@
 #!/bin/bash
+# 遇到任何错误则立即退出
+set -e
 
-echo "Starting AlmaLinux 9 Unified Development Environment..."
+# --- 助手函数 ---
+info() {
+    echo -e "\033[1;34m[信息]\033[0m $1"
+}
 
-# Define image and container names based on docker-compose.yaml
-# Assuming image name follows pattern <username>/<service_name>:<tag>
-# Or inferred by docker-compose build.
-# Let's rely on docker-compose to find the correct image.
-SERVICE_NAME="alma-dev"
-CONTAINER_NAME="alma-dev"
-SSH_PORT="28974"
-USER_ID="2034"
-GROUP_ID="2000"
-
-# Check if the container is already running using the service name
-if docker-compose ps -q ${SERVICE_NAME} &>/dev/null; then
-  if [ "$(docker-compose ps -q ${SERVICE_NAME} | xargs docker inspect -f '{{.State.Status}}')" == "running" ]; then
-    echo "Container is already running."
-    # Optionally show connection info again or just exit
-  fi
-fi
-
-# 启动容器
-echo "Attempting to start container via docker-compose..."
-if docker-compose up -d ${SERVICE_NAME}; then
-    echo "Waiting for services inside the container (like SSH)..."
-    sleep 5 # Increased sleep time slightly
-
-    # Check container status again
-    if [ "$(docker-compose ps -q ${SERVICE_NAME} | xargs docker inspect -f '{{.State.Status}}')" != "running" ]; then
-      echo "Container failed to start or stay running. Check logs with:"
-      echo "  docker-compose logs ${SERVICE_NAME}"
-      echo "  Or ./dev-cli.sh logs"
-      exit 1
-    fi
-
-    echo "Container started successfully. SSH connection info:"
-    echo "  Host: localhost"
-    echo "  Port: ${SSH_PORT}"
-    echo "  User: shijiashuai (UID 2034, GID 2000)"
-    echo "  Password: (Set within Dockerfile/container setup if applicable)"
-    echo ""
-    echo "Connect example: ssh -p ${SSH_PORT} shijiashuai@localhost"
-    # Replace <username> with the actual username configured for UID 2034 inside the container
-    echo ""
-    echo "Use './dev-cli.sh ssh' for easier connection if configured."
-
-else
-    echo "Failed to execute docker-compose up."
-    echo "Check docker-compose logs ${SERVICE_NAME} for errors."
+error() {
+    echo -e "\033[1;31m[错误]\033[0m $1" >&2
     exit 1
+}
+
+# --- 主逻辑 ---
+info "正在启动 AlmaLinux HPC 开发环境..."
+
+# 1. 检查 Docker 是否已安装
+if ! command -v docker &> /dev/null; then
+    error "未检测到 Docker。请先安装 Docker。"
 fi
 
-# Removed environment specific feature list (JDK, C++, etc.)
-# Add relevant info for alma-all environment if needed. 
+# 2. 使用 Docker Compose 启动容器
+if docker-compose up -d; then
+    info "容器已成功在后台启动。"
+    info "使用 './dev-cli.sh logs' 查看日志。"
+    info "使用 './dev-cli.sh ssh' 连接到容器。"
+else
+    error "启动失败。请使用 'docker-compose up' 在前台启动以查看错误详情。"
+fi

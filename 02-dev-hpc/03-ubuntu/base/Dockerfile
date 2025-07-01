@@ -1,78 +1,78 @@
 #
-# Ubuntu Base Image for Development
+# Ubuntu 基础镜像 - 用于通用开发
 #
-# This Dockerfile sets up a minimal base environment with a non-root user,
-# SSH access, and essential tools, managed by Supervisor.
+# 功能:
+#   此 Dockerfile 构建一个最小化的基础开发环境，包含一个非 root 用户、
+#   SSH 访问能力和由 Supervisor 管理的基础工具。
 #
+
+# --- 基础镜像 ---
+# 使用官方的 Ubuntu 镜像，版本通过构建参数指定，默认为 24.04
 ARG UBUNTU_VERSION=24.04
 FROM ubuntu:${UBUNTU_VERSION}
 
+# --- 镜像元数据 ---
 LABEL maintainer="Cascade AI Assistant"
-LABEL description="Base image for development with Ubuntu, user setup, and SSH."
+LABEL description="用于开发的基础镜像，基于Ubuntu，包含用户设置和SSH服务。"
 
-# --- Environment Variables ---
+# --- 环境变量 ---
+# 设置为非交互式，避免 apt-get 等命令在构建过程中挂起等待用户输入
 ENV DEBIAN_FRONTEND=noninteractive \
+    # 设置时区
     TZ=Asia/Shanghai \
+    # 设置容器的默认语言环境，避免乱码问题
     LANG=en_US.UTF-8 \
     LANGUAGE=en_US:en \
     LC_ALL=en_US.UTF-8
 
-# --- Build Arguments ---
-# Defines the user, group, and password for the non-root user.
-# Example: docker build --build-arg DEV_PASSWORD=your_pass -t ubuntu-base .
+# --- 构建参数 ---
+# 定义将要创建的非 root 用户的用户名、密码、UID 和 GID。
+# 示例: docker build --build-arg DEV_PASSWORD=your_pass -t ubuntu-base .
 ARG DEV_USER=shijiashuai
-ARG DEV_PASSWORD=phoenix2024
+ARG DEV_PASSWORD=change_this_password
 ARG USER_UID=2034
 ARG DEV_GROUP=lush-dev
 ARG GROUP_GID=2000
 
-# --- Package Installation ---
-# Combine all apt operations into a single RUN layer to optimize image size.
+# --- 软件包安装 ---
+# 将所有 apt 操作合并到单个 RUN 层中，以优化镜像大小
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-    # Basic utilities
+    # 基础工具
     sudo \
     ca-certificates \
     wget \
     curl \
     gnupg \
     zsh \
-    # SSH and process management
+    # SSH 和进程管理
     openssh-server \
     supervisor \
-    # Set timezone and clean up
+    # 设置时区并清理
     && ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone \
+    # 清理 apt 缓存以减小镜像体积
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# --- Configuration & User Setup ---
-# Copy configuration files and the unified setup script.
+# --- 配置与用户设置 ---
+# 复制配置文件和统一用户设置脚本
 COPY sshd_config /etc/ssh/sshd_config
-COPY supervisord.conf /etc/supervisor/supervisord.conf
+COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY ../../scripts/unified-user-setup.sh /tmp/unified-user-setup.sh
 
-# Execute the setup script to create the user, then generate SSH host keys.
+# 执行用户设置脚本，然后生成 SSH 主机密钥
 RUN chmod +x /tmp/unified-user-setup.sh && \
+    # 调用脚本创建用户
     /tmp/unified-user-setup.sh "${DEV_USER}" "${DEV_PASSWORD}" "${USER_UID}" "${DEV_GROUP}" "${GROUP_GID}" && \
+    # 删除临时脚本
     rm /tmp/unified-user-setup.sh && \
-    # Generate SSH host keys
+    # 生成 SSH 服务所需的主机密钥
     ssh-keygen -A && \
-    # Ensure the sshd run directory exists
+    # 确保 sshd 的运行目录存在
     mkdir -p /var/run/sshd
 
-# --- Ports & Entrypoint ---
+# --- 端口与入口点 ---
+# 暴露 SSH 服务的默认端口 22
 EXPOSE 22
 
-# Use supervisord to start and manage the sshd service.
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/supervisord.conf"]
-
-USER root
-
-# Supervisor配置
-RUN mkdir -p /etc/supervisor/conf.d
-COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
-
-# 开放SSH端口
-EXPOSE 22
-
-# 设置容器启动命令
+# 使用 supervisord 启动和管理 sshd 服务
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]

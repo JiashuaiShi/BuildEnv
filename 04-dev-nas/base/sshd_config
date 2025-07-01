@@ -1,15 +1,27 @@
 #
-# OpenSSH Server Configuration for NAS Base Image
+# OpenSSH 服务器配置文件 (sshd_config)
 #
 
+# 监听所有网络接口的 22 端口
 Port 22
 
-# Authentication
+# 允许 root 用户登录 (设为 no 可提高安全性)
 PermitRootLogin yes
+
+# 启用严格模式，检查用户目录和密钥文件的权限
+StrictModes yes
+
+# 允许基于公钥的认证
+PubkeyAuthentication yes
+
+# 允许基于密码的认证 (设为 no 可强制使用密钥登录，更安全)
 PasswordAuthentication yes
 
-# Use PAM to authorize users
+# 允许空密码 (强烈建议设为 no)
+PermitEmptyPasswords no
+
+# 使用 PAM (Pluggable Authentication Modules) 进行认证
 UsePAM yes
 
-# SFTP Subsystem
+# SFTP 子系统配置
 Subsystem sftp /usr/libexec/openssh/sftp-server
