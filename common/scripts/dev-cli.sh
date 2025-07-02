@@ -2,17 +2,41 @@
 
 # ==============================================================================
 #
-#                          Web 开发环境管理命令行工具
+#                     通用开发环境管理命令行工具
 #
 # 功能:
-#   - 提供一个统一的接口来管理 Docker Compose 环境 (启动、停止、日志等)。
-#   - 支持通过 SSH 或 exec 命令与容器交互。
-#   - 动态加载 .env 配置，避免硬编码。
+#   - 自动检测当前环境类型
+#   - 提供统一的接口管理 Docker Compose 环境
+#   - 支持通过 SSH 或 exec 命令与容器交互
 #
 # ==============================================================================
 
 # --- 脚本健壮性设置 ---
 set -euo pipefail
+
+# --- 获取当前环境信息 ---
+CURRENT_DIR="$(pwd)"
+ENV_TYPE=""
+
+# 从当前路径判断环境类型
+case "${CURRENT_DIR}" in
+    *hpc*)
+        ENV_TYPE="hpc"
+        ;;
+    *web*)
+        ENV_TYPE="web"
+        ;;
+    *nas*)
+        ENV_TYPE="nas"
+        ;;
+    *ai*)
+        ENV_TYPE="ai"
+        ;;
+    *)
+        echo "无法确定环境类型，请确保在环境目录中运行此脚本"
+        exit 1
+        ;;
+esac
 
 # --- ANSI 颜色代码定义 ---
 COLOR_BLUE='\033[1;34m'
@@ -34,8 +58,24 @@ if [ -f "${ENV_FILE}" ]; then
 fi
 # 设置默认值以防 .env 文件中未定义
 DEV_USER=${DEV_USER:-shijiashuai}
-SSH_PORT=${SSH_PORT:-2224} # 请确保此端口与 docker-compose.yaml 中一致
-CONTAINER_NAME="web-dev"
+SSH_PORT=${SSH_PORT:-2222} # 默认端口，各环境会覆盖
+CONTAINER_NAME="${ENV_TYPE}-dev"
+
+# 环境特定端口覆盖
+case "${ENV_TYPE}" in
+    "hpc")
+        SSH_PORT=${SSH_PORT:-2222}
+        ;;
+    "web")
+        SSH_PORT=${SSH_PORT:-2223}
+        ;;
+    "nas")
+        SSH_PORT=${SSH_PORT:-2224}
+        ;;
+    "ai")
+        SSH_PORT=${SSH_PORT:-2225}
+        ;;
+esac
 
 # --- 用法说明 ---
 usage() {

@@ -2,11 +2,11 @@
 
 # ==============================================================================
 #
-#                             Web 开发环境构建脚本
+#                            Ubuntu HPC 环境构建脚本
 #
 # 功能:
-#   - 检查并构建基础镜像 (web-base)。
-#   - 使用 Docker Compose 构建开发镜像 (web-dev)。
+#   - 检查并构建基础镜像 (ubuntu-base)。
+#   - 使用 Docker Compose 构建开发镜像 (ubuntu-dev)。
 #   - 提供清晰的日志输出和严格的错误处理。
 #
 # ==============================================================================
@@ -29,14 +29,14 @@ log_error() { echo -e "${COLOR_RED}[ERROR]${COLOR_NC} $1"; exit 1; }
 
 # --- 配置区 ---
 BASE_DIR="../base"
-BASE_IMAGE_NAME="web-base"
+BASE_IMAGE_NAME="ubuntu-base"
 BASE_IMAGE_TAG="latest"
-DEV_IMAGE_NAME="web-dev"
+DEV_IMAGE_NAME="ubuntu-dev"
 DEV_IMAGE_TAG="latest"
 ENV_FILE=".env"
 
 # --- 主逻辑开始 ---
-log_info "开始构建 Web 开发环境..."
+log_info "开始构建 Ubuntu HPC 开发环境..."
 
 # 1. 检查依赖: Docker 和 Docker Compose
 if ! command -v docker &> /dev/null; then

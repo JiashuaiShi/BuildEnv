@@ -2,17 +2,45 @@
 
 # ==============================================================================
 #
-#                             Web 开发环境构建脚本
+#                         通用开发环境构建脚本
 #
 # 功能:
-#   - 检查并构建基础镜像 (web-base)。
-#   - 使用 Docker Compose 构建开发镜像 (web-dev)。
-#   - 提供清晰的日志输出和严格的错误处理。
+#   - 自动检测当前环境类型
+#   - 构建基础镜像和开发镜像
+#   - 提供清晰的日志输出和错误处理
+#
+# 使用说明:
+#   将此脚本放在 common/scripts/ 目录下
+#   在各环境的 dev 目录中创建指向此脚本的符号链接
 #
 # ==============================================================================
 
 # --- 脚本健壮性设置 ---
 set -euo pipefail
+
+# --- 获取当前环境信息 ---
+CURRENT_DIR="$(pwd)"
+ENV_TYPE=""
+
+# 从当前路径判断环境类型
+case "${CURRENT_DIR}" in
+    *hpc*)
+        ENV_TYPE="hpc"
+        ;;
+    *web*)
+        ENV_TYPE="web"
+        ;;
+    *nas*)
+        ENV_TYPE="nas"
+        ;;
+    *ai*)
+        ENV_TYPE="ai"
+        ;;
+    *)
+        echo "无法确定环境类型，请确保在环境目录中运行此脚本"
+        exit 1
+        ;;
+esac
 
 # --- ANSI 颜色代码定义 ---
 COLOR_BLUE='\033[1;34m'
@@ -27,16 +55,8 @@ log_success() { echo -e "${COLOR_GREEN}[SUCCESS]${COLOR_NC} $1"; }
 log_warn() { echo -e "${COLOR_YELLOW}[WARN]${COLOR_NC} $1"; }
 log_error() { echo -e "${COLOR_RED}[ERROR]${COLOR_NC} $1"; exit 1; }
 
-# --- 配置区 ---
-BASE_DIR="../base"
-BASE_IMAGE_NAME="web-base"
-BASE_IMAGE_TAG="latest"
-DEV_IMAGE_NAME="web-dev"
-DEV_IMAGE_TAG="latest"
-ENV_FILE=".env"
-
 # --- 主逻辑开始 ---
-log_info "开始构建 Web 开发环境..."
+log_info "开始构建 ${ENV_TYPE} 开发环境..."
 
 # 1. 检查依赖: Docker 和 Docker Compose
 if ! command -v docker &> /dev/null; then
@@ -46,7 +66,8 @@ if ! docker compose version &> /dev/null; then
     log_error "未检测到 Docker Compose。请确保您的 Docker 版本包含 Compose。"
 fi
 
-# 2. 加载并验证 .env 文件
+# 2. 检查 .env 文件是否存在
+ENV_FILE=".env"
 if [ ! -f "${ENV_FILE}" ]; then
     log_error "配置文件 '${ENV_FILE}' 未找到。请从 '.env.example' 复制并进行配置。"
 fi
@@ -65,6 +86,10 @@ if [ "${DEV_PASSWORD}" == "change_this_password" ]; then
 fi
 
 # 3. 构建基础镜像 (如果不存在)
+BASE_DIR="../base"
+BASE_IMAGE_NAME="${ENV_TYPE}-base"
+BASE_IMAGE_TAG="latest"
+
 if ! docker image inspect "${BASE_IMAGE_NAME}:${BASE_IMAGE_TAG}" &> /dev/null; then
     log_info "基础镜像 '${BASE_IMAGE_NAME}:${BASE_IMAGE_TAG}' 不存在，现在开始构建..."
     if [ ! -f "${BASE_DIR}/Dockerfile" ]; then
@@ -85,6 +110,9 @@ else
 fi
 
 # 4. 构建开发镜像
+DEV_IMAGE_NAME="${ENV_TYPE}-dev"
+DEV_IMAGE_TAG="latest"
+
 log_info "正在使用 Docker Compose 构建开发镜像 '${DEV_IMAGE_NAME}:${DEV_IMAGE_TAG}'..."
 docker compose build
 

@@ -1,39 +1,33 @@
 #
-# Web 开发镜像 (已优化)
+# NAS 管理开发镜像 (已优化)
 #
 # 功能:
-#   此 Dockerfile 继承自 web-base 基础镜像，并安装了现代 Web 开发
-#   所需的通用工具链和增强的终端环境。
+#   此 Dockerfile 继承自 nas-base 基础镜像，并为管理员安装了
+#   额外的便利工具和增强的终端环境。
 #
 
 # --- 基础镜像 ---
-ARG BASE_IMAGE=web-base:latest
+ARG BASE_IMAGE=nas-base:latest
 ARG DEV_USER=shijiashuai
 FROM ${BASE_IMAGE}
 
 # --- 镜像元数据 ---
 LABEL maintainer="Cascade AI Assistant"
-LABEL description="Web 开发环境，预装了现代前端开发工具链和 Oh My Zsh。"
+LABEL description="NAS 管理环境，预装了 Samba, NFS, 和 Oh My Zsh。"
 
-# --- 安装系统级开发工具 ---
+# --- 安装额外工具 ---
 # 切换到 root 用户以安装软件包
+# 将所有安装和清理步骤合并到一个 RUN 指令中，以减少镜像层数
 USER root
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
+RUN dnf -y update && \
+    # 安装管理工具 (按字母顺序排列)
+    dnf -y install \
         git \
         htop \
         vim \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
-
-# --- 安装全局 Node.js 包 ---
-# 安装通用的全局工具。注意：现代前端开发已不推荐全局安装 create-react-app 或 @vue/cli，
-# 而是推荐使用 `npx create-react-app` 或 `pnpm create vue` 等命令来初始化项目。
-RUN npm install -g \
-    nodemon \
-    pnpm \
-    typescript \
-    yarn
+    # 清理 dnf 缓存以减小镜像体积
+    && dnf clean all \
+    && rm -rf /var/cache/dnf/*
 
 # --- 用户级环境配置 (Oh My Zsh) ---
 # 切换到开发用户以执行用户级别的安装
@@ -51,8 +45,9 @@ RUN \
     && sed -i 's/plugins=(git)/plugins=(git zsh-autosuggestions zsh-syntax-highlighting)/' ~/.zshrc
 
 # --- 最终设置 ---
-# 切换回 root 用户，并将默认工作目录设置为 /workspace
+# 切换回 root 用户。
+# 将默认工作目录设置为 /export，以方便管理 NAS 共享目录。
 USER root
-WORKDIR /workspace
+WORKDIR /export
 
 # CMD 指令从基础镜像继承

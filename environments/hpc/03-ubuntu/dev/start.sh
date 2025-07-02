@@ -2,7 +2,7 @@
 
 # ==============================================================================
 #
-#                            Web 开发环境启动脚本
+#                           Ubuntu HPC 环境启动脚本
 #
 # 功能:
 #   - 检查依赖项并加载配置。
@@ -30,7 +30,7 @@ log_error() { echo -e "${COLOR_RED}[ERROR]${COLOR_NC} $1"; exit 1; }
 ENV_FILE=".env"
 
 # --- 主逻辑开始 ---
-log_info "正在启动 Web 开发环境..."
+log_info "正在启动 Ubuntu HPC 开发环境..."
 
 # 1. 检查依赖: Docker 和 Docker Compose
 if ! command -v docker &> /dev/null; then

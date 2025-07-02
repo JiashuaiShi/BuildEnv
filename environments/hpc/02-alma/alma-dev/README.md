@@ -1,16 +1,19 @@
-# Web 开发环境 (Ubuntu 24.04)
+# HPC 开发环境 (AlmaLinux 9)
 
-本环境基于 Ubuntu 24.04，提供了一个集成了 Node.js 和 Python 的现代化 Web 开发平台。
+本环境基于 AlmaLinux 9，提供了一个为 C++ 和 Java 设计的高性能计算开发平台。
 
 ## 环境特性
 
-- **操作系统**: Ubuntu 24.04
+- **操作系统**: AlmaLinux 9
 - **核心工具链**:
-  - **Node.js**: v20
-  - **Python**: Python 3
-  - **全局NPM包**:
-    - `create-react-app`
-    - `@vue/cli`
+  - **C++**:
+    - GCC (g++)
+    - Clang
+    - CMake
+    - GDB
+  - **Java**:
+    - OpenJDK 11
+    - Maven
 - **终端环境**: Zsh (with Oh My Zsh, auto-suggestions, syntax-highlighting)
 - **基础服务**:
   - OpenSSH 服务器，用于远程连接。
@@ -60,35 +63,32 @@ cp .env.example .env
 ### 3. 连接与开发
 
 - **通过 SSH 连接**:
-  容器的 22 端口已映射到主机的 2224 端口。
+  容器的 22 端口已映射到主机的 2222 端口。
   ```bash
   # 使用 dev-cli.sh 脚本 (推荐)
   ./dev-cli.sh ssh
 
   # 或者手动连接 (用户名请根据 .env 文件修改)
-  ssh shijiashuai@localhost -p 2224
+  ssh shijiashuai@localhost -p 2222
   ```
 
 - **在容器内执行命令**:
   使用 `dev-cli.sh exec` 可以在不进入容器的情况下执行命令。
   ```bash
-  # 查看 Node.js 版本
-  ./dev-cli.sh exec node --version
+  # 查看 GCC 版本
+  ./dev-cli.sh exec gcc --version
 
-  # 查看 npm 版本
-  ./dev-cli.sh exec npm --version
+  # 查看 Java 版本
+  ./dev-cli.sh exec java -version
   ```
 
 ## 端口映射
 
-| 容器端口 | 主机端口 | 用途             |
-|----------|----------|------------------|
-| 22       | 2224     | SSH 远程连接     |
-| 3000     | 3000     | React 开发服务器 |
-| 8080     | 8080     | Vue 开发服务器   |
-| 8000     | 8000     | Python Web 服务器|
+| 容器端口 | 主机端口 | 用途       |
+|----------|----------|------------|
+| 22       | 2222     | SSH 远程连接 |
 
 ## 卷挂载
 
-- `./:/workspace`: 将当前目录 (`dev`) 挂载到容器的 `/workspace` 目录，方便进行代码开发和同步。
+- `./:/workspace`: 将当前目录 (`alma-dev`) 挂载到容器的 `/workspace` 目录，方便进行代码开发和同步。
 - `/data-lush:/data-lush`: 挂载一个通用的数据卷，可用于存放大型数据集或项目文件。

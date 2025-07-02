@@ -2,7 +2,7 @@
 
 # ==============================================================================
 #
-#                          Web 开发环境管理命令行工具
+#                         Ubuntu HPC 环境管理命令行工具
 #
 # 功能:
 #   - 提供一个统一的接口来管理 Docker Compose 环境 (启动、停止、日志等)。
@@ -34,8 +34,8 @@ if [ -f "${ENV_FILE}" ]; then
 fi
 # 设置默认值以防 .env 文件中未定义
 DEV_USER=${DEV_USER:-shijiashuai}
-SSH_PORT=${SSH_PORT:-2224} # 请确保此端口与 docker-compose.yaml 中一致
-CONTAINER_NAME="web-dev"
+SSH_PORT=${SSH_PORT:-2223} # 请确保此端口与 docker-compose.yaml 中一致
+CONTAINER_NAME="ubuntu-dev"
 
 # --- 用法说明 ---
 usage() {
