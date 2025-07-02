@@ -1,0 +1,24 @@
+#
+# Docker Compose for Web Development Environment
+#
+version: '3.8'
+
+services:
+  web-dev:
+    image: web-dev:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: web-dev
+    hostname: web-dev
+    env_file:
+      - .env
+    ports:
+      - "3000:3000" # for web app
+      - "2223:22"   # for ssh
+    volumes:
+      - /path/to/your/local/web/workspace:/workspace
+    restart: unless-stopped
+    tty: true
+    stdin_open: true
+    working_dir: /workspace

@@ -57,25 +57,12 @@ if [ -f "${ENV_FILE}" ]; then
     source "${ENV_FILE}"
 fi
 # 设置默认值以防 .env 文件中未定义
+# 优先从 .env 文件中读取配置，如果未定义，则使用以下默认值
 DEV_USER=${DEV_USER:-shijiashuai}
-SSH_PORT=${SSH_PORT:-2222} # 默认端口，各环境会覆盖
-CONTAINER_NAME="${ENV_TYPE}-dev"
+SSH_PORT=${SSH_PORT:-2222}
 
-# 环境特定端口覆盖
-case "${ENV_TYPE}" in
-    "hpc")
-        SSH_PORT=${SSH_PORT:-2222}
-        ;;
-    "web")
-        SSH_PORT=${SSH_PORT:-2223}
-        ;;
-    "nas")
-        SSH_PORT=${SSH_PORT:-2224}
-        ;;
-    "ai")
-        SSH_PORT=${SSH_PORT:-2225}
-        ;;
-esac
+# 从当前目录名动态获取容器/服务名，确保与 docker-compose.yaml 中的服务名一致
+CONTAINER_NAME=$(basename "$(pwd)")
 
 # --- 用法说明 ---
 usage() {
