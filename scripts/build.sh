@@ -20,27 +20,19 @@ set -euo pipefail
 
 # --- 获取当前环境信息 ---
 CURRENT_DIR="$(pwd)"
-ENV_TYPE=""
 
-# 从当前路径判断环境类型
-case "${CURRENT_DIR}" in
-    *hpc*)
-        ENV_TYPE="hpc"
-        ;;
-    *web*)
-        ENV_TYPE="web"
-        ;;
-    *nas*)
-        ENV_TYPE="nas"
-        ;;
-    *ai*)
-        ENV_TYPE="ai"
-        ;;
-    *)
-        echo "无法确定环境类型，请确保在环境目录中运行此脚本"
-        exit 1
-        ;;
-esac
+# 从环境配置文件读取类型
+if [ -f "../../environment.conf" ]; then
+    source "../../environment.conf"
+else
+    echo "环境配置文件缺失，请创建environment.conf"
+    exit 1
+fi
+
+if [ -z "${ENV_TYPE}" ]; then
+    echo "environment.conf中未定义ENV_TYPE"
+    exit 1
+fi
 
 # --- ANSI 颜色代码定义 ---
 COLOR_BLUE='\033[1;34m'
@@ -96,15 +88,32 @@ if ! docker image inspect "${BASE_IMAGE_NAME}:${BASE_IMAGE_TAG}" &> /dev/null; t
         log_error "基础镜像的 Dockerfile 未在 '${BASE_DIR}/Dockerfile' 找到。"
     fi
 
-    docker build \
+    log_info "开始构建 ${ENV_TYPE} 基础镜像..."
+    if ! docker build \
         --build-arg DEV_USER="${DEV_USER}" \
         --build-arg DEV_PASSWORD="${DEV_PASSWORD}" \
         --build-arg USER_UID="${USER_UID}" \
         --build-arg DEV_GROUP="${DEV_GROUP}" \
         --build-arg GROUP_GID="${GROUP_GID}" \
         -t "${BASE_IMAGE_NAME}:${BASE_IMAGE_TAG}" \
-        "${BASE_DIR}"
-    log_success "基础镜像 '${BASE_IMAGE_NAME}:${BASE_IMAGE_TAG}' 构建成功。"
+        "${BASE_DIR}"; then
+        
+        log_warn "基础镜像构建失败，将在10秒后重试..."
+        sleep 10
+        
+        if ! docker build \
+            --build-arg DEV_USER="${DEV_USER}" \
+            --build-arg DEV_PASSWORD="${DEV_PASSWORD}" \
+            --build-arg USER_UID="${USER_UID}" \
+            --build-arg DEV_GROUP="${DEV_GROUP}" \
+            --build-arg GROUP_GID="${GROUP_GID}" \
+            -t "${BASE_IMAGE_NAME}:${BASE_IMAGE_TAG}" \
+            "${BASE_DIR}"; then
+            log_error "基础镜像构建重试失败"
+            exit 1
+        fi
+    fi
+    log_success "基础镜像构建完成"
 else
     log_info "基础镜像 '${BASE_IMAGE_NAME}:${BASE_IMAGE_TAG}' 已存在，跳过构建。"
 fi
@@ -114,7 +123,17 @@ DEV_IMAGE_NAME="${ENV_TYPE}-dev"
 DEV_IMAGE_TAG="latest"
 
 log_info "正在使用 Docker Compose 构建开发镜像 '${DEV_IMAGE_NAME}:${DEV_IMAGE_TAG}'..."
-docker compose build
+if ! docker compose build; then
+    
+    log_warn "开发镜像构建失败，将在10秒后重试..."
+    sleep 10
+    
+    if ! docker compose build; then
+        log_error "开发镜像构建重试失败"
+        exit 1
+    fi
+fi
+log_success "开发镜像构建完成"
 
 log_success "========== 构建完成 =========="
 log_info "要启动容器，请运行: ./start.sh"
