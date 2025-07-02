@@ -1,2 +1,12 @@
 # 基础环境配置
 # 集中管理所有环境的公共配置项
+# 示例配置项：
+# common:
+#   log_level: INFO
+#   timezone: Asia/Shanghai
+#   network:
+#     default_ports:
+#       http: 8080
+#       https: 8443
+#   security:
+#     min_password_length: 8
