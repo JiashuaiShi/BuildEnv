@@ -8,7 +8,8 @@
 
 # --- 基础镜像 ---
 ARG BASE_IMAGE=nas-base:latest
-ARG DEV_USER=shijiashuai
+# 接收开发用户名，用于后续的用户级配置
+ARG DEV_USER
 FROM ${BASE_IMAGE}
 
 # --- 镜像元数据 ---

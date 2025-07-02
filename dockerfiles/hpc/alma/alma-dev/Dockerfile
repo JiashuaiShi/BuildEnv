@@ -17,7 +17,8 @@ LABEL description="HPC 开发镜像，基于 AlmaLinux，预装了 C++/Java 工�
 
 # --- 构建参数 ---
 # 接收开发用户名，用于后续的用户级配置
-ARG DEV_USER=shijiashuai
+# 接收开发用户名，用于后续的用户级配置
+ARG DEV_USER
 
 # --- 安装核心开发工具链 ---
 # 切换到 root 用户以安装系统级软件包

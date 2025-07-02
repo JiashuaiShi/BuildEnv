@@ -15,52 +15,61 @@
 
 ```
 devenv/
-├── scripts/                  # 统一的用户设置脚本 (已汉化)
-│   └── unified-user-setup.sh
-├── 02-dev-hpc/               # 高性能计算开发环境
-│   ├── 02-alma/              # AlmaLinux (C++/Java)
-│   └── 03-ubuntu/            # Ubuntu (C++/Java)
-├── 03-dev-web/               # Web 全栈开发环境
-│   └── dev/                  # Ubuntu (Node.js/Python)
-└── 04-dev-nas/               # NAS 服务与管理环境
-    └── dev/                  # AlmaLinux (Samba/NFS)
+├── dockerfiles/              # 所有 Dockerfile 按场景分类存放
+│   ├── ai/                   # AI 开发环境
+│   ├── examples/             # 示例环境
+│   ├── hpc/                  # 高性能计算环境
+│   ├── nas/                  # NAS 服务环境
+│   └── web/                  # Web 开发环境
+├── scripts/                  # 统一的控制脚本
+│   ├── build.sh              # 构建环境
+│   ├── start.sh              # 启动环境
+│   └── dev-cli.sh            # 与环境交互
+└── configs/                  # 全局配置文件
+    └── base-config.yaml
 ```
+
+## 环境依赖
+
+本项目在 Linux, macOS, 或 Windows (通过 WSL 2) 环境下运行。请确保已安装以下工具：
+
+1.  **Docker 和 Docker Compose**: 用于构建和管理容器。
+2.  **yq**: 一个轻量级的命令行 YAML 处理器，用于脚本中解析配置文件。请[点击此处](https://github.com/mikefarah/yq/#install)查看其安装方式。
+3.  **(Windows 用户)**: 强烈建议安装并使用 **[WSL 2 (Windows Subsystem for Linux)](https://learn.microsoft.com/zh-cn/windows/wsl/install)**。所有脚本都为 Linux 环境设计，在 WSL 2 中可以无缝运行。
 
 ## 快速开始
 
 仅需 4 步，即可启动您的专属开发环境：
 
 1.  **进入环境目录**: 
-    选择您需要的环境，并进入其 `dev` 目录。例如，要使用 AlmaLinux 的 HPC 环境：
+    选择一个你需要的场景，例如 `web` 开发环境。
     ```bash
-    cd 02-dev-hpc/02-alma/alma-dev
+    cd dockerfiles/web
     ```
 
-2.  **配置您的密码**: 
-    复制 `.env.example` 文件为 `.env`，并修改 `DEV_PASSWORD` 的值为您的安全密码。
+2.  **配置环境变量**: 
+    从模板复制 `.env` 文件，并根据需要修改其中的配置（例如密码）。
     ```bash
     cp .env.example .env
-    # 使用编辑器打开 .env 并修改密码
     ```
-    **警告：请勿在生产环境中使用默认密码！**
 
-3.  **构建镜像**: 
-    执行构建脚本。此过程会自动处理基础镜像和开发镜像的构建。
+3.  **构建并启动环境**: 
+    执行构建脚本，它会自动完成所有镜像的构建和容器的启动。
     ```bash
     ./build.sh
     ```
 
-4.  **启动并使用**: 
-    启动容器，然后您就可以通过 SSH 登录或执行其他命令了。
+4.  **开始使用**: 
+    构建成功后，你可以通过 `dev-cli.sh` 与你的开发环境交互。
     ```bash
-    # 启动容器 (后台运行)
-    ./start.sh
+    # 进入容器的 shell
+    ./dev-cli.sh ssh
 
-    # 通过 SSH 登录容器
-    ./start.sh ssh
+    # 查看实时日志
+    ./dev-cli.sh logs
 
-    # 在容器内执行命令 (例如: 查看 gcc 版本)
-    ./start.sh exec gcc --version
+    # 停止环境
+    ./dev-cli.sh stop
     ```
 
 ## 项目状态

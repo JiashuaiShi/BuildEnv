@@ -9,7 +9,8 @@
 # --- 基础镜像 ---
 # 通过构建参数指定基础镜像和开发用户名
 ARG BASE_IMAGE=ubuntu-base:latest
-ARG DEV_USER=shijiashuai
+# 接收开发用户名，用于后续的用户级配置
+ARG DEV_USER
 FROM ${BASE_IMAGE}
 
 # --- 镜像元数据 ---

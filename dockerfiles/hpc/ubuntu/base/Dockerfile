@@ -25,11 +25,12 @@ ENV DEBIAN_FRONTEND=noninteractive \
 
 # --- 构建参数 ---
 # 定义将要创建的非 root 用户的用户名、密码、UID 和 GID。
-ARG DEV_USER=shijiashuai
-ARG DEV_PASSWORD=change_this_password
-ARG USER_UID=2034
-ARG DEV_GROUP=lush-dev
-ARG GROUP_GID=2000
+# 这些值将由 build.sh 脚本从 .env 文件中读取并注入，此处仅声明
+ARG DEV_USER
+ARG DEV_PASSWORD
+ARG USER_UID
+ARG DEV_GROUP
+ARG GROUP_GID
 
 # --- 核心软件包安装与清理 ---
 # 将所有安装和清理步骤合并到一个 RUN 指令中，以减少镜像层数和体积。
